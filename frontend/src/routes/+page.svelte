@@ -1,40 +1,9 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { sensorData, controllerData, fetchSensorData, fetchControllerData } from '$lib/stores';
-  import { Line } from 'svelte-chartjs';
-  import { 
-    Chart as ChartJS,
-    Title,
-    Tooltip,
-    Legend,
-    LineElement,
-    LinearScale,
-    PointElement,
-    CategoryScale
-  } from 'chart.js';
-  
-  // Register ChartJS components
-  ChartJS.register(
-    Title,
-    Tooltip,
-    Legend,
-    LineElement,
-    LinearScale,
-    PointElement,
-    CategoryScale
-  );
-  
-  // Historical data for charts
-  let phHistory = [];
-  let orpHistory = [];
-  let ecHistory = [];
-  let tempHistory = [];
-  
-  // Time labels for charts
-  let timeLabels = [];
-  
-  // Maximum number of data points to keep
-  const MAX_HISTORY = 20;
+  import { sensorData, controllerData, sensorHistory, fetchSensorData, fetchControllerData, getChartData } from '$lib/stores';
+  import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
+  import { Badge } from "$lib/components/ui/badge";
+  import { LineChart, AreaChart } from 'layerchart';
   
   // Update interval (in ms)
   const UPDATE_INTERVAL = 10000; // 10 seconds
@@ -42,119 +11,12 @@
   // Interval ID for cleanup
   let intervalId;
   
-  // Format time for display
-  function formatTime(date) {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-  
-  // Update historical data
-  function updateHistory() {
-    const now = new Date();
-    const timeLabel = formatTime(now);
-    
-    // Add new time label
-    timeLabels.push(timeLabel);
-    if (timeLabels.length > MAX_HISTORY) {
-      timeLabels.shift();
-    }
-    
-    // Add new data points
-    phHistory.push($sensorData.ph);
-    if (phHistory.length > MAX_HISTORY) {
-      phHistory.shift();
-    }
-    
-    orpHistory.push($sensorData.orp);
-    if (orpHistory.length > MAX_HISTORY) {
-      orpHistory.shift();
-    }
-    
-    ecHistory.push($sensorData.ec);
-    if (ecHistory.length > MAX_HISTORY) {
-      ecHistory.shift();
-    }
-    
-    tempHistory.push($sensorData.water_temperature);
-    if (tempHistory.length > MAX_HISTORY) {
-      tempHistory.shift();
-    }
-    
-    // Force update
-    phHistory = [...phHistory];
-    orpHistory = [...orpHistory];
-    ecHistory = [...ecHistory];
-    tempHistory = [...tempHistory];
-    timeLabels = [...timeLabels];
-  }
-  
-  // Chart data
-  $: phChartData = {
-    labels: timeLabels,
-    datasets: [
-      {
-        label: 'pH',
-        data: phHistory,
-        borderColor: 'rgb(75, 192, 192)',
-        tension: 0.1
-      }
-    ]
-  };
-  
-  $: orpChartData = {
-    labels: timeLabels,
-    datasets: [
-      {
-        label: 'ORP (mV)',
-        data: orpHistory,
-        borderColor: 'rgb(153, 102, 255)',
-        tension: 0.1
-      }
-    ]
-  };
-  
-  $: ecChartData = {
-    labels: timeLabels,
-    datasets: [
-      {
-        label: 'EC (μS/cm)',
-        data: ecHistory,
-        borderColor: 'rgb(255, 159, 64)',
-        tension: 0.1
-      }
-    ]
-  };
-  
-  $: tempChartData = {
-    labels: timeLabels,
-    datasets: [
-      {
-        label: 'Water Temperature (°C)',
-        data: tempHistory,
-        borderColor: 'rgb(255, 99, 132)',
-        tension: 0.1
-      }
-    ]
-  };
-  
-  // Chart options
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        beginAtZero: false
-      }
-    }
-  };
-  
-  // Fetch data and update history
+  // Fetch data
   async function updateData() {
     await Promise.all([
       fetchSensorData(),
       fetchControllerData()
     ]);
-    
-    updateHistory();
   }
   
   onMount(async () => {
@@ -171,120 +33,162 @@
       clearInterval(intervalId);
     }
   });
+  
+  // Chart options
+  const chartOptions = {
+    grid: {
+      x: {
+        show: true
+      },
+      y: {
+        show: true
+      }
+    },
+    tooltip: {
+      show: true
+    },
+    height: 250
+  };
 </script>
 
-<div class="row mb-4">
-  <div class="col-md-3">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">pH</h5>
-        <h2 class="card-text">{$sensorData.ph ? $sensorData.ph.toFixed(2) : 'N/A'}</h2>
-        <p class="card-text">
+<div class="space-y-8">
+  <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <!-- pH Card -->
+    <Card>
+      <CardHeader class="pb-2">
+        <CardTitle class="text-sm font-medium">pH</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="text-2xl font-bold">{$sensorData.ph ? $sensorData.ph.toFixed(2) : 'N/A'}</div>
+        <p class="text-xs text-muted-foreground">
           Target: {$controllerData.ph ? $controllerData.ph.target_ph.toFixed(2) : 'N/A'}
           {#if $controllerData.ph}
-            <span class="badge {$controllerData.ph.running ? 'bg-success' : 'bg-secondary'}">
+            <Badge variant={$controllerData.ph.running ? "success" : "secondary"} class="ml-2">
               {$controllerData.ph.running ? 'Running' : 'Stopped'}
-            </span>
+            </Badge>
           {/if}
         </p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-md-3">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">ORP</h5>
-        <h2 class="card-text">{$sensorData.orp ? $sensorData.orp.toFixed(0) : 'N/A'} mV</h2>
-        <p class="card-text">
+      </CardContent>
+    </Card>
+
+    <!-- ORP Card -->
+    <Card>
+      <CardHeader class="pb-2">
+        <CardTitle class="text-sm font-medium">ORP</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="text-2xl font-bold">{$sensorData.orp ? $sensorData.orp.toFixed(0) : 'N/A'} mV</div>
+        <p class="text-xs text-muted-foreground">
           Target: {$controllerData.orp ? $controllerData.orp.target_orp.toFixed(0) : 'N/A'} mV
           {#if $controllerData.orp}
-            <span class="badge {$controllerData.orp.running ? 'bg-success' : 'bg-secondary'}">
+            <Badge variant={$controllerData.orp.running ? "success" : "secondary"} class="ml-2">
               {$controllerData.orp.running ? 'Running' : 'Stopped'}
-            </span>
+            </Badge>
           {/if}
         </p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-md-3">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">EC</h5>
-        <h2 class="card-text">{$sensorData.ec ? $sensorData.ec.toFixed(0) : 'N/A'} μS/cm</h2>
-        <p class="card-text">
+      </CardContent>
+    </Card>
+
+    <!-- EC Card -->
+    <Card>
+      <CardHeader class="pb-2">
+        <CardTitle class="text-sm font-medium">EC</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="text-2xl font-bold">{$sensorData.ec ? $sensorData.ec.toFixed(0) : 'N/A'} μS/cm</div>
+        <p class="text-xs text-muted-foreground">
           Target: {$controllerData.ec ? $controllerData.ec.target_ec.toFixed(0) : 'N/A'} μS/cm
           {#if $controllerData.ec}
-            <span class="badge {$controllerData.ec.running ? 'bg-success' : 'bg-secondary'}">
+            <Badge variant={$controllerData.ec.running ? "success" : "secondary"} class="ml-2">
               {$controllerData.ec.running ? 'Running' : 'Stopped'}
-            </span>
+            </Badge>
           {/if}
         </p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-md-3">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Temperature</h5>
-        <h2 class="card-text">{$sensorData.water_temperature ? $sensorData.water_temperature.toFixed(1) : 'N/A'} °C</h2>
-        <p class="card-text">
+      </CardContent>
+    </Card>
+
+    <!-- Temperature Card -->
+    <Card>
+      <CardHeader class="pb-2">
+        <CardTitle class="text-sm font-medium">Temperature</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="text-2xl font-bold">{$sensorData.water_temperature ? $sensorData.water_temperature.toFixed(1) : 'N/A'} °C</div>
+        <p class="text-xs text-muted-foreground">
           Air: {$sensorData.air_temperature ? $sensorData.air_temperature.toFixed(1) : 'N/A'} °C
           Humidity: {$sensorData.humidity ? $sensorData.humidity.toFixed(1) : 'N/A'} %
         </p>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   </div>
-</div>
 
-<div class="row">
-  <div class="col-md-6 mb-4">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">pH History</h5>
-        <div style="height: 300px;">
-          <Line data={phChartData} options={chartOptions} />
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-md-6 mb-4">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">ORP History</h5>
-        <div style="height: 300px;">
-          <Line data={orpChartData} options={chartOptions} />
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-md-6 mb-4">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">EC History</h5>
-        <div style="height: 300px;">
-          <Line data={ecChartData} options={chartOptions} />
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-md-6 mb-4">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Temperature History</h5>
-        <div style="height: 300px;">
-          <Line data={tempChartData} options={chartOptions} />
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+  <div class="grid gap-4 md:grid-cols-2">
+    <!-- pH Chart -->
+    <Card>
+      <CardHeader>
+        <CardTitle>pH History</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <LineChart
+          data={getChartData('ph')}
+          xKey="x"
+          yKey="y"
+          options={chartOptions}
+          color="#10b981"
+        />
+      </CardContent>
+    </Card>
 
-<div class="text-muted mt-2">
-  Last updated: {$sensorData.lastUpdated ? $sensorData.lastUpdated.toLocaleString() : 'Never'}
+    <!-- ORP Chart -->
+    <Card>
+      <CardHeader>
+        <CardTitle>ORP History</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <LineChart
+          data={getChartData('orp')}
+          xKey="x"
+          yKey="y"
+          options={chartOptions}
+          color="#6366f1"
+        />
+      </CardContent>
+    </Card>
+
+    <!-- EC Chart -->
+    <Card>
+      <CardHeader>
+        <CardTitle>EC History</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <LineChart
+          data={getChartData('ec')}
+          xKey="x"
+          yKey="y"
+          options={chartOptions}
+          color="#f59e0b"
+        />
+      </CardContent>
+    </Card>
+
+    <!-- Temperature Chart -->
+    <Card>
+      <CardHeader>
+        <CardTitle>Temperature History</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <LineChart
+          data={getChartData('water_temperature')}
+          xKey="x"
+          yKey="y"
+          options={chartOptions}
+          color="#ef4444"
+        />
+      </CardContent>
+    </Card>
+  </div>
+
+  <div class="text-xs text-muted-foreground">
+    Last updated: {$sensorData.lastUpdated ? $sensorData.lastUpdated.toLocaleString() : 'Never'}
+  </div>
 </div>

@@ -1,10 +1,17 @@
 <script>
   import { onMount } from 'svelte';
   import { configData, fetchConfig } from '$lib/stores';
+  import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
+  import { Tabs, TabsContent, TabsList, TabsTrigger } from "$lib/components/ui/tabs";
+  import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
+  import { Button } from "$lib/components/ui/button";
+  import { Alert, AlertDescription } from "$lib/components/ui/alert";
   
   // Form values
   let config = null;
   let statusMessage = '';
+  let activeTab = "sensors";
   
   // Update configuration
   async function updateConfig() {
@@ -42,204 +49,211 @@
   $: if ($configData && !config) {
     config = JSON.parse(JSON.stringify($configData));
   }
+  
 </script>
 
-<h2>System Settings</h2>
-
-{#if config}
-  <div class="row">
-    <div class="col-md-12 mb-4">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="mb-0">Configuration</h5>
-        </div>
-        <div class="card-body">
-          <ul class="nav nav-tabs" id="configTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="sensors-tab" data-bs-toggle="tab" data-bs-target="#sensors" type="button" role="tab">
-                Sensors
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="controllers-tab" data-bs-toggle="tab" data-bs-target="#controllers" type="button" role="tab">
-                Controllers
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="outputs-tab" data-bs-toggle="tab" data-bs-target="#outputs" type="button" role="tab">
-                Outputs
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="api-tab" data-bs-toggle="tab" data-bs-target="#api" type="button" role="tab">
-                API
-              </button>
-            </li>
-          </ul>
-          
-          <div class="tab-content p-3" id="configTabsContent">
-            <!-- Sensors Tab -->
-            <div class="tab-pane fade show active" id="sensors" role="tabpanel">
-              <h5>pH Sensor</h5>
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">SCK Pin</label>
-                  <input type="number" class="form-control" bind:value={config.sensors.ph.sck_pin}>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Data Pin</label>
-                  <input type="number" class="form-control" bind:value={config.sensors.ph.data_pin}>
-                </div>
-              </div>
-              
-              <h5>ORP Sensor</h5>
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">SCK Pin</label>
-                  <input type="number" class="form-control" bind:value={config.sensors.orp.sck_pin}>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Data Pin</label>
-                  <input type="number" class="form-control" bind:value={config.sensors.orp.data_pin}>
-                </div>
-              </div>
-              
-              <h5>EC Sensor</h5>
-              <div class="row mb-3">
-                <div class="col-md-4">
-                  <label class="form-label">SCK Pin</label>
-                  <input type="number" class="form-control" bind:value={config.sensors.ec.sck_pin}>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Data Pin</label>
-                  <input type="number" class="form-control" bind:value={config.sensors.ec.data_pin}>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">PWM Pin</label>
-                  <input type="number" class="form-control" bind:value={config.sensors.ec.pwm_pin}>
-                </div>
-              </div>
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">K Value</label>
-                  <input type="number" class="form-control" bind:value={config.sensors.ec.k_value} step="0.1">
-                </div>
-              </div>
-              
-              <h5>Environment Sensor</h5>
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">I2C Bus</label>
-                  <input type="number" class="form-control" bind:value={config.sensors.environment.i2c_bus}>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Controllers Tab -->
-            <div class="tab-pane fade" id="controllers" role="tabpanel">
-              <h5>pH Controller</h5>
-              <div class="row mb-3">
-                <div class="col-md-4">
-                  <label class="form-label">Check Interval (seconds)</label>
-                  <input type="number" class="form-control" bind:value={config.controllers.ph.check_interval}>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Acid Pump Pin</label>
-                  <input type="number" class="form-control" bind:value={config.controllers.ph.acid_pump_pin}>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Base Pump Pin</label>
-                  <input type="number" class="form-control" bind:value={config.controllers.ph.base_pump_pin}>
-                </div>
-              </div>
-              
-              <h5>ORP Controller</h5>
-              <div class="row mb-3">
-                <div class="col-md-4">
-                  <label class="form-label">Check Interval (seconds)</label>
-                  <input type="number" class="form-control" bind:value={config.controllers.orp.check_interval}>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Increase Pump Pin</label>
-                  <input type="number" class="form-control" bind:value={config.controllers.orp.increase_pump_pin}>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Decrease Pump Pin</label>
-                  <input type="number" class="form-control" bind:value={config.controllers.orp.decrease_pump_pin}>
-                </div>
-              </div>
-              
-              <h5>EC Controller</h5>
-              <div class="row mb-3">
-                <div class="col-md-4">
-                  <label class="form-label">Check Interval (seconds)</label>
-                  <input type="number" class="form-control" bind:value={config.controllers.ec.check_interval}>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Nutrient Pump Pin</label>
-                  <input type="number" class="form-control" bind:value={config.controllers.ec.nutrient_pump_pin}>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Water Pump Pin</label>
-                  <input type="number" class="form-control" bind:value={config.controllers.ec.water_pump_pin}>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Outputs Tab -->
-            <div class="tab-pane fade" id="outputs" role="tabpanel">
-              <h5>MOSFET Pins</h5>
-              <div class="mb-3">
-                <label class="form-label">GPIO Pins (comma-separated)</label>
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  value={config.outputs.mosfet_pins.join(', ')}
-                  on:input={(e) => {
-                    const pins = e.target.value.split(',').map(pin => parseInt(pin.trim())).filter(pin => !isNaN(pin));
-                    config.outputs.mosfet_pins = pins;
-                  }}
-                >
-              </div>
-            </div>
-            
-            <!-- API Tab -->
-            <div class="tab-pane fade" id="api" role="tabpanel">
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">Host</label>
-                  <input type="text" class="form-control" bind:value={config.api.host}>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Port</label>
-                  <input type="number" class="form-control" bind:value={config.api.port}>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="mt-3">
-            <button class="btn btn-primary" on:click={updateConfig}>Save Configuration</button>
-            
-            {#if statusMessage}
-              <div class="alert alert-info mt-3">{statusMessage}</div>
-            {/if}
-          </div>
-        </div>
-      </div>
-    </div>
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h2 class="text-3xl font-bold tracking-tight">System Settings</h2>
   </div>
-{:else}
-  <div class="alert alert-info">Loading configuration...</div>
-{/if}
 
-<script>
-  // Add Bootstrap JavaScript for tabs
-  onMount(() => {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js';
-    script.integrity = 'sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4';
-    script.crossOrigin = 'anonymous';
-    document.body.appendChild(script);
-  });
-</script>
+  {#if config}
+    <Card>
+      <CardHeader>
+        <CardTitle>Configuration</CardTitle>
+        <CardDescription>Manage your system configuration settings</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={(value) => activeTab = value} class="w-full">
+          <TabsList class="grid w-full grid-cols-4">
+            <TabsTrigger value="sensors">Sensors</TabsTrigger>
+            <TabsTrigger value="controllers">Controllers</TabsTrigger>
+            <TabsTrigger value="outputs">Outputs</TabsTrigger>
+            <TabsTrigger value="api">API</TabsTrigger>
+          </TabsList>
+          
+          <!-- Sensors Tab -->
+          <TabsContent value="sensors" class="space-y-6">
+            <div class="space-y-4">
+              <div>
+                <h3 class="text-lg font-medium">pH Sensor</h3>
+                <div class="grid grid-cols-2 gap-4 mt-2">
+                  <div class="space-y-2">
+                    <Label for="ph-sck-pin">SCK Pin</Label>
+                    <Input id="ph-sck-pin" type="number" bind:value={config.sensors.ph.sck_pin} />
+                  </div>
+                  <div class="space-y-2">
+                    <Label for="ph-data-pin">Data Pin</Label>
+                    <Input id="ph-data-pin" type="number" bind:value={config.sensors.ph.data_pin} />
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 class="text-lg font-medium">ORP Sensor</h3>
+                <div class="grid grid-cols-2 gap-4 mt-2">
+                  <div class="space-y-2">
+                    <Label for="orp-sck-pin">SCK Pin</Label>
+                    <Input id="orp-sck-pin" type="number" bind:value={config.sensors.orp.sck_pin} />
+                  </div>
+                  <div class="space-y-2">
+                    <Label for="orp-data-pin">Data Pin</Label>
+                    <Input id="orp-data-pin" type="number" bind:value={config.sensors.orp.data_pin} />
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 class="text-lg font-medium">EC Sensor</h3>
+                <div class="grid grid-cols-3 gap-4 mt-2">
+                  <div class="space-y-2">
+                    <Label for="ec-sck-pin">SCK Pin</Label>
+                    <Input id="ec-sck-pin" type="number" bind:value={config.sensors.ec.sck_pin} />
+                  </div>
+                  <div class="space-y-2">
+                    <Label for="ec-data-pin">Data Pin</Label>
+                    <Input id="ec-data-pin" type="number" bind:value={config.sensors.ec.data_pin} />
+                  </div>
+                  <div class="space-y-2">
+                    <Label for="ec-pwm-pin">PWM Pin</Label>
+                    <Input id="ec-pwm-pin" type="number" bind:value={config.sensors.ec.pwm_pin} />
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                  <div class="space-y-2">
+                    <Label for="ec-k-value">K Value</Label>
+                    <Input id="ec-k-value" type="number" bind:value={config.sensors.ec.k_value} step="0.1" />
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 class="text-lg font-medium">Environment Sensor</h3>
+                <div class="grid grid-cols-2 gap-4 mt-2">
+                  <div class="space-y-2">
+                    <Label for="env-i2c-bus">I2C Bus</Label>
+                    <Input id="env-i2c-bus" type="number" bind:value={config.sensors.environment.i2c_bus} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <!-- Controllers Tab -->
+          <TabsContent value="controllers" class="space-y-6">
+            <div class="space-y-4">
+              <div>
+                <h3 class="text-lg font-medium">pH Controller</h3>
+                <div class="grid grid-cols-3 gap-4 mt-2">
+                  <div class="space-y-2">
+                    <Label for="ph-check-interval">Check Interval (seconds)</Label>
+                    <Input id="ph-check-interval" type="number" bind:value={config.controllers.ph.check_interval} />
+                  </div>
+                  <div class="space-y-2">
+                    <Label for="ph-acid-pump-pin">Acid Pump Pin</Label>
+                    <Input id="ph-acid-pump-pin" type="number" bind:value={config.controllers.ph.acid_pump_pin} />
+                  </div>
+                  <div class="space-y-2">
+                    <Label for="ph-base-pump-pin">Base Pump Pin</Label>
+                    <Input id="ph-base-pump-pin" type="number" bind:value={config.controllers.ph.base_pump_pin} />
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 class="text-lg font-medium">ORP Controller</h3>
+                <div class="grid grid-cols-3 gap-4 mt-2">
+                  <div class="space-y-2">
+                    <Label for="orp-check-interval">Check Interval (seconds)</Label>
+                    <Input id="orp-check-interval" type="number" bind:value={config.controllers.orp.check_interval} />
+                  </div>
+                  <div class="space-y-2">
+                    <Label for="orp-increase-pump-pin">Increase Pump Pin</Label>
+                    <Input id="orp-increase-pump-pin" type="number" bind:value={config.controllers.orp.increase_pump_pin} />
+                  </div>
+                  <div class="space-y-2">
+                    <Label for="orp-decrease-pump-pin">Decrease Pump Pin</Label>
+                    <Input id="orp-decrease-pump-pin" type="number" bind:value={config.controllers.orp.decrease_pump_pin} />
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 class="text-lg font-medium">EC Controller</h3>
+                <div class="grid grid-cols-3 gap-4 mt-2">
+                  <div class="space-y-2">
+                    <Label for="ec-check-interval">Check Interval (seconds)</Label>
+                    <Input id="ec-check-interval" type="number" bind:value={config.controllers.ec.check_interval} />
+                  </div>
+                  <div class="space-y-2">
+                    <Label for="ec-nutrient-pump-pin">Nutrient Pump Pin</Label>
+                    <Input id="ec-nutrient-pump-pin" type="number" bind:value={config.controllers.ec.nutrient_pump_pin} />
+                  </div>
+                  <div class="space-y-2">
+                    <Label for="ec-water-pump-pin">Water Pump Pin</Label>
+                    <Input id="ec-water-pump-pin" type="number" bind:value={config.controllers.ec.water_pump_pin} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <!-- Outputs Tab -->
+          <TabsContent value="outputs" class="space-y-6">
+            <div class="space-y-4">
+              <div>
+                <h3 class="text-lg font-medium">MOSFET Pins</h3>
+                <div class="space-y-2 mt-2">
+                  <Label for="mosfet-pins">GPIO Pins (comma-separated)</Label>
+                  <Input 
+                    id="mosfet-pins"
+                    type="text" 
+                    value={config.outputs.mosfet_pins.join(', ')}
+                    on:input={(e) => {
+                      const pins = e.target.value.split(',').map(pin => parseInt(pin.trim())).filter(pin => !isNaN(pin));
+                      config.outputs.mosfet_pins = pins;
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <!-- API Tab -->
+          <TabsContent value="api" class="space-y-6">
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <Label for="api-host">Host</Label>
+                  <Input id="api-host" type="text" bind:value={config.api.host} />
+                </div>
+                <div class="space-y-2">
+                  <Label for="api-port">Port</Label>
+                  <Input id="api-port" type="number" bind:value={config.api.port} />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+      <CardFooter>
+        <Button on:click={updateConfig}>Save Configuration</Button>
+      </CardFooter>
+    </Card>
+    
+    {#if statusMessage}
+      <Alert>
+        <AlertDescription>{statusMessage}</AlertDescription>
+      </Alert>
+    {/if}
+  {:else}
+    <Card>
+      <CardContent class="pt-6">
+        <div class="flex items-center justify-center p-6">
+          <p>Loading configuration...</p>
+        </div>
+      </CardContent>
+    </Card>
+  {/if}
+</div>
+
