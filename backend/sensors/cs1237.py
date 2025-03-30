@@ -37,86 +37,81 @@ class CS1237:
         if self._initialized:
             return
             
-        # Wake up the ADC
-        GPIO.output(self.sck_pin, GPIO.HIGH)
-        await asyncio.sleep(0.001)
-        GPIO.output(self.sck_pin, GPIO.LOW)
-        
-        # Wait for the device to be ready
-        while GPIO.input(self.data_pin) == GPIO.HIGH:
+        try:
+            # Wake up the ADC
+            GPIO.output(self.sck_pin, GPIO.HIGH)
             await asyncio.sleep(0.001)
-            
-        self._initialized = True
-        
-        # Configure the device
-        await self._configure()
-        
-    async def _configure(self):
-        """Configure gain and rate settings"""
-        # Send 29 clock pulses to enter configuration mode
-        for _ in range(29):
-            GPIO.output(self.sck_pin, GPIO.HIGH)
-            await asyncio.sleep(0.000001)  # 1µs delay
             GPIO.output(self.sck_pin, GPIO.LOW)
-            await asyncio.sleep(0.000001)  # 1µs delay
             
-        # Send configuration bits (gain and rate)
-        config = (self.gain << 2) | self.rate
-        
-        for i in range(4):
-            bit = (config >> (3 - i)) & 1
-            GPIO.output(self.sck_pin, GPIO.HIGH)
-            await asyncio.sleep(0.000001)
+            # Wait for the device to be ready with timeout
+            timeout = 0.5  # 500ms timeout
+            start_time = asyncio.get_event_loop().time()
             
-            if bit:
-                GPIO.setup(self.data_pin, GPIO.OUT)
-                GPIO.output(self.data_pin, GPIO.HIGH)
-            else:
-                GPIO.setup(self.data_pin, GPIO.OUT)
-                GPIO.output(self.data_pin, GPIO.LOW)
-                
-            GPIO.output(self.sck_pin, GPIO.LOW)
-            await asyncio.sleep(0.000001)
+            while GPIO.input(self.data_pin) == GPIO.HIGH:
+                await asyncio.sleep(0.001)
+                if asyncio.get_event_loop().time() - start_time > timeout:
+                    print(f"Warning: CS1237 on pins SCK={self.sck_pin}, DATA={self.data_pin} timed out during initialization")
+                    return False
+                    
+            self._initialized = True
             
-        # Return data pin to input mode
-        GPIO.setup(self.data_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        
+            # Configure the device
+            await self._configure()
+            return True
+            
+        except Exception as e:
+            print(f"Error initializing CS1237 on pins SCK={self.sck_pin}, DATA={self.data_pin}: {e}")
+            return False
+            
     async def read_raw(self):
         """
         Read raw 24-bit value from the ADC
         
         Returns:
-            int: Raw 24-bit ADC value
+            int: Raw 24-bit ADC value or None if error
         """
         if not self._initialized:
-            await self.initialize()
+            success = await self.initialize()
+            if not success:
+                return None
+                
+        try:
+            # Wait for the device to be ready with timeout
+            timeout = 0.5  # 500ms timeout
+            start_time = asyncio.get_event_loop().time()
             
-        # Wait for the device to be ready
-        while GPIO.input(self.data_pin) == GPIO.HIGH:
-            await asyncio.sleep(0.001)
-            
-        # Read 24 bits
-        value = 0
-        for i in range(24):
+            while GPIO.input(self.data_pin) == GPIO.HIGH:
+                await asyncio.sleep(0.001)
+                if asyncio.get_event_loop().time() - start_time > timeout:
+                    print(f"Warning: CS1237 on pins SCK={self.sck_pin}, DATA={self.data_pin} timed out during reading")
+                    return None
+                    
+            # Read 24 bits
+            value = 0
+            for i in range(24):
+                GPIO.output(self.sck_pin, GPIO.HIGH)
+                await asyncio.sleep(0.000001)  # 1µs delay
+                
+                value = (value << 1) | GPIO.input(self.data_pin)
+                
+                GPIO.output(self.sck_pin, GPIO.LOW)
+                await asyncio.sleep(0.000001)  # 1µs delay
+                
+            # Additional clock pulse to complete the reading
             GPIO.output(self.sck_pin, GPIO.HIGH)
-            await asyncio.sleep(0.000001)  # 1µs delay
-            
-            value = (value << 1) | GPIO.input(self.data_pin)
-            
+            await asyncio.sleep(0.000001)
             GPIO.output(self.sck_pin, GPIO.LOW)
-            await asyncio.sleep(0.000001)  # 1µs delay
             
-        # Additional clock pulse to complete the reading
-        GPIO.output(self.sck_pin, GPIO.HIGH)
-        await asyncio.sleep(0.000001)
-        GPIO.output(self.sck_pin, GPIO.LOW)
-        
-        # Convert to signed value
-        if value & 0x800000:
-            value = value - 0x1000000
+            # Convert to signed value
+            if value & 0x800000:
+                value = value - 0x1000000
+                
+            return value
             
-        return value
-        
+        except Exception as e:
+            print(f"Error reading from CS1237 on pins SCK={self.sck_pin}, DATA={self.data_pin}: {e}")
+            return None
+            
     async def read_voltage(self, vref=5.0):
         """
         Read voltage from the ADC
@@ -125,9 +120,12 @@ class CS1237:
             vref: Reference voltage (default 5.0V)
             
         Returns:
-            float: Voltage reading
+            float: Voltage reading or None if error
         """
         raw = await self.read_raw()
+        if raw is None:
+            return None
+            
         voltage = (raw / 0x7FFFFF) * vref
         return voltage
         

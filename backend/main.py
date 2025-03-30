@@ -60,78 +60,143 @@ class HydroponicSystem:
     async def _initialize_sensors(self):
         """Initialize all sensors"""
         # pH sensor
-        ph_config = self.config.get('sensors', {}).get('ph', {})
-        if ph_config:
-            sck_pin = ph_config.get('sck_pin')
-            data_pin = ph_config.get('data_pin')
-            
-            # Extract calibration data from the new structure
-            calibration = ph_config.get('calibration', {})
-            if 'voltage_1' in calibration and 'ph_1' in calibration and 'voltage_2' in calibration and 'ph_2' in calibration:
-                # Create calibration dictionary with voltage-to-pH mapping
-                cal_dict = {
-                    float(calibration['voltage_1']): float(calibration['ph_1']),
-                    float(calibration['voltage_2']): float(calibration['ph_2'])
-                }
-            else:
-                cal_dict = {}
-            
-            self.sensors['ph'] = PHSensor(sck_pin, data_pin, cal_dict)
-            print("Initializing pH sensor ...")
-            await self.sensors['ph'].initialize()
-            print("Initialized pH sensor")
+        try:
+            ph_config = self.config.get('sensors', {}).get('ph', {})
+            if ph_config:
+                sck_pin = ph_config.get('sck_pin')
+                data_pin = ph_config.get('data_pin')
+                
+                # Extract calibration data from the new structure
+                calibration = ph_config.get('calibration', {})
+                if 'voltage_1' in calibration and 'ph_1' in calibration and 'voltage_2' in calibration and 'ph_2' in calibration:
+                    # Create calibration dictionary with voltage-to-pH mapping
+                    cal_dict = {
+                        float(calibration['voltage_1']): float(calibration['ph_1']),
+                        float(calibration['voltage_2']): float(calibration['ph_2'])
+                    }
+                else:
+                    cal_dict = {}
+                
+                tmp_ph = PHSensor(sck_pin, data_pin, cal_dict)
+                print("Initializing pH sensor...")
+                
+                # Add timeout for sensor initialization
+                try:
+                    init_task = asyncio.create_task(self.sensors['ph'].initialize())
+                    await asyncio.wait_for(init_task, timeout=2.0)  # 2 second timeout
+                    print("Initialized pH sensor")
+                    self.sensors['ph'] = tmp_ph
+                except asyncio.TimeoutError:
+                    print("Warning: pH sensor initialization timed out")
+                except Exception as e:
+                    print(f"Error initializing pH sensor: {e}")
+                    # Keep the sensor in the dictionary but mark it as not initialized
+                    self.sensors['ph'].initialized = False
+        except Exception as e:
+            print(f"Error setting up pH sensor: {e}")
             
         # ORP sensor
-        orp_config = self.config.get('sensors', {}).get('orp', {})
-        if orp_config:
-            sck_pin = orp_config.get('sck_pin')
-            data_pin = orp_config.get('data_pin')
-            offset = orp_config.get('offset', 0)
-            
-            self.sensors['orp'] = ORPSensor(sck_pin, data_pin, offset)
-            print("Initializing ORP sensor ...")
-            await self.sensors['orp'].initialize()
-            print("Initialized ORP sensor")
+        try:
+            orp_config = self.config.get('sensors', {}).get('orp', {})
+            if orp_config:
+                sck_pin = orp_config.get('sck_pin')
+                data_pin = orp_config.get('data_pin')
+                offset = orp_config.get('offset', 0)
+                
+                tmp_orp = ORPSensor(sck_pin, data_pin, offset)
+                print("Initializing ORP sensor...")
+                
+                try:
+                    init_task = asyncio.create_task(self.sensors['orp'].initialize())
+                    await asyncio.wait_for(init_task, timeout=2.0)  # 2 second timeout
+                    print("Initialized ORP sensor")
+                    self.sensors['orp'] = tmp_orp
+                except asyncio.TimeoutError:
+                    print("Warning: ORP sensor initialization timed out")
+                except Exception as e:
+                    print(f"Error initializing ORP sensor: {e}")
+                    self.sensors['orp'].initialized = False
+        except Exception as e:
+            print(f"Error setting up ORP sensor: {e}")
             
         # EC sensor
-        ec_config = self.config.get('sensors', {}).get('ec', {})
-        if ec_config:
-            sck_pin = ec_config.get('sck_pin')
-            data_pin = ec_config.get('data_pin')
-            pwm_pin = ec_config.get('pwm_pin')
-            k_value = ec_config.get('k_value', 1.0)
-            
-            # Extract calibration factor if available
-            calibration = ec_config.get('calibration', {})
-            factor = calibration.get('factor', 1.0)
-            
-            self.sensors['ec'] = ECSensor(sck_pin, data_pin, pwm_pin, k_value=k_value, calibration_factor=factor)
-            print("Initializing EC sensor ...")
-            await self.sensors['ec'].initialize()
-            print("Initialized EC sensor")
+        try:
+            ec_config = self.config.get('sensors', {}).get('ec', {})
+            if ec_config:
+                sck_pin = ec_config.get('sck_pin')
+                data_pin = ec_config.get('data_pin')
+                pwm_pin = ec_config.get('pwm_pin')
+                k_value = ec_config.get('k_value', 1.0)
+                
+                # Extract calibration factor if available
+                calibration = ec_config.get('calibration', {})
+                factor = calibration.get('factor', 1.0)
+                
+                self.sensors['ec'] = ECSensor(sck_pin, data_pin, pwm_pin, k_value=k_value, calibration_factor=factor)
+                print("Initializing EC sensor...")
+                
+                try:
+                    init_task = asyncio.create_task(self.sensors['ec'].initialize())
+                    await asyncio.wait_for(init_task, timeout=2.0)  # 2 second timeout
+                    print("Initialized EC sensor")
+                except asyncio.TimeoutError:
+                    print("Warning: EC sensor initialization timed out")
+                except Exception as e:
+                    print(f"Error initializing EC sensor: {e}")
+                    self.sensors['ec'].initialized = False
+        except Exception as e:
+            print(f"Error setting up EC sensor: {e}")
             
         # Temperature sensor
-        temp_config = self.config.get('sensors', {}).get('temperature', {})
-        if temp_config:
-            sensor_id = temp_config.get('ds18b20_id')
-            
-            self.sensors['temperature'] = DS18B20(sensor_id)
-            await self.sensors['temperature'].initialize()
-            print("Initialized temperature sensor")
-            
-            # Set temperature for EC sensor
-            if 'ec' in self.sensors and 'temperature' in self.sensors:
-                temp = await self.sensors['temperature'].read_temperature()
-                self.sensors['ec'].set_temperature(temp)
+        try:
+            temp_config = self.config.get('sensors', {}).get('temperature', {})
+            if temp_config:
+                sensor_id = temp_config.get('ds18b20_id')
+                
+                self.sensors['temperature'] = DS18B20(sensor_id)
+                print("Initializing temperature sensor...")
+                
+                try:
+                    init_task = asyncio.create_task(self.sensors['temperature'].initialize())
+                    await asyncio.wait_for(init_task, timeout=2.0)  # 2 second timeout
+                    print("Initialized temperature sensor")
+                    
+                    # Set temperature for EC sensor
+                    if 'ec' in self.sensors and hasattr(self.sensors['ec'], 'initialized') and self.sensors['ec'].initialized:
+                        try:
+                            temp = await self.sensors['temperature'].read_temperature()
+                            if temp is not None:
+                                self.sensors['ec'].set_temperature(temp)
+                        except Exception as e:
+                            print(f"Error reading temperature for EC sensor: {e}")
+                except asyncio.TimeoutError:
+                    print("Warning: Temperature sensor initialization timed out")
+                except Exception as e:
+                    print(f"Error initializing temperature sensor: {e}")
+                    self.sensors['temperature'].initialized = False
+        except Exception as e:
+            print(f"Error setting up temperature sensor: {e}")
                 
         # Environment sensor
-        env_config = self.config.get('sensors', {}).get('environment', {})
-        if env_config:
-            i2c_bus = env_config.get('i2c_bus', 1)
-            
-            self.sensors['environment'] = SHT41(i2c_bus)
-            await self.sensors['environment'].initialize()
-            print("Initialized environment sensor")
+        try:
+            env_config = self.config.get('sensors', {}).get('environment', {})
+            if env_config:
+                i2c_bus = env_config.get('i2c_bus', 1)
+                
+                self.sensors['environment'] = SHT41(i2c_bus)
+                print("Initializing environment sensor...")
+                
+                try:
+                    init_task = asyncio.create_task(self.sensors['environment'].initialize())
+                    await asyncio.wait_for(init_task, timeout=2.0)  # 2 second timeout
+                    print("Initialized environment sensor")
+                except asyncio.TimeoutError:
+                    print("Warning: Environment sensor initialization timed out")
+                except Exception as e:
+                    print(f"Error initializing environment sensor: {e}")
+                    self.sensors['environment'].initialized = False
+        except Exception as e:
+            print(f"Error setting up environment sensor: {e}")
             
     def _initialize_controllers(self):
         """Initialize all controllers"""
@@ -202,7 +267,8 @@ class HydroponicSystem:
         # Start controllers
         for controller_id, controller in self.controllers.items():
             if not controller.running:
-                self.app.loop.create_task(controller.run())
+                # Use asyncio.get_event_loop() instead of self.app.loop
+                asyncio.get_event_loop().create_task(controller.run())
                 print(f"Started {controller_id} controller")
                 
         # Start API server
@@ -231,7 +297,12 @@ class HydroponicSystem:
             
         # Clean up sensors
         for sensor_id, sensor in self.sensors.items():
-            sensor.close()
+            # Check if the sensor has a close method before calling it
+            if hasattr(sensor, 'close'):
+                try:
+                    sensor.close()
+                except Exception as e:
+                    print(f"Error closing {sensor_id} sensor: {e}")
             
         # Clean up outputs
         if self.outputs:
@@ -254,13 +325,13 @@ async def main():
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, signal_handler)
         
-    # try:
+    try:
         # Initialize and start the system
         await system.initialize()
         await system.start()
-    # except Exception as e:
-    #     print(f"Error: {e}")
-    #     system.cleanup()
+    except Exception as e:
+        print(f"Error: {e}")
+        system.cleanup()
         
 if __name__ == "__main__":
     asyncio.run(main())
