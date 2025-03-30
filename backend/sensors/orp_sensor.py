@@ -37,7 +37,7 @@ class ORPSensor:
         orp_mv = voltage * 1000 + self.offset
         return orp_mv
         
-    def calibrate(self, known_orp):
+    async def calibrate(self, known_orp):
         """
         Calibrate the sensor with a known ORP solution
         

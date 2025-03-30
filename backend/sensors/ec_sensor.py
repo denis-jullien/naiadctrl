@@ -75,7 +75,7 @@ class ECSensor:
         """
         self.temperature = temperature
         
-    def calibrate(self, known_ec):
+    async def calibrate(self, known_ec):
         """
         Calibrate the sensor with a known EC solution
         

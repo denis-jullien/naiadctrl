@@ -30,8 +30,10 @@ class Config:
                     "sck_pin": 17,
                     "data_pin": 27,
                     "calibration": {
-                        "2.5": 7.0,
-                        "3.0": 4.0
+                        "voltage_1": 2.5,
+                        "ph_1": 7.0,
+                        "voltage_2": 3.0,
+                        "ph_2": 4.0
                     }
                 },
                 "orp": {
@@ -43,7 +45,10 @@ class Config:
                     "sck_pin": 24,
                     "data_pin": 25,
                     "pwm_pin": 18,
-                    "k_value": 1.0
+                    "k_value": 1.0,
+                    "calibration": {
+                        "factor": 1.0
+                    }
                 },
                 "temperature": {
                     "ds18b20_id": None  # Auto-detect
@@ -136,10 +141,8 @@ class Config:
         if section is None:
             return self.config
             
-        if key is None:
-            return self.config.get(section, {})
-            
-        return self.config.get(section, {}).get(key)
+        return self.config.get(section, key)
+        
         
     def set(self, section, key, value):
         """

@@ -64,9 +64,20 @@ class HydroponicSystem:
         if ph_config:
             sck_pin = ph_config.get('sck_pin')
             data_pin = ph_config.get('data_pin')
-            calibration = {float(k): float(v) for k, v in ph_config.get('calibration', {}).items()}
             
-            self.sensors['ph'] = PHSensor(sck_pin, data_pin, calibration)
+            # Extract calibration data from the new structure
+            calibration = ph_config.get('calibration', {})
+            if 'voltage_1' in calibration and 'ph_1' in calibration and 'voltage_2' in calibration and 'ph_2' in calibration:
+                # Create calibration dictionary with voltage-to-pH mapping
+                cal_dict = {
+                    float(calibration['voltage_1']): float(calibration['ph_1']),
+                    float(calibration['voltage_2']): float(calibration['ph_2'])
+                }
+            else:
+                cal_dict = {}
+            
+            self.sensors['ph'] = PHSensor(sck_pin, data_pin, cal_dict)
+            print("Initializing pH sensor ...")
             await self.sensors['ph'].initialize()
             print("Initialized pH sensor")
             
@@ -78,6 +89,7 @@ class HydroponicSystem:
             offset = orp_config.get('offset', 0)
             
             self.sensors['orp'] = ORPSensor(sck_pin, data_pin, offset)
+            print("Initializing ORP sensor ...")
             await self.sensors['orp'].initialize()
             print("Initialized ORP sensor")
             
@@ -89,7 +101,12 @@ class HydroponicSystem:
             pwm_pin = ec_config.get('pwm_pin')
             k_value = ec_config.get('k_value', 1.0)
             
-            self.sensors['ec'] = ECSensor(sck_pin, data_pin, pwm_pin, k_value=k_value)
+            # Extract calibration factor if available
+            calibration = ec_config.get('calibration', {})
+            factor = calibration.get('factor', 1.0)
+            
+            self.sensors['ec'] = ECSensor(sck_pin, data_pin, pwm_pin, k_value=k_value, calibration_factor=factor)
+            print("Initializing EC sensor ...")
             await self.sensors['ec'].initialize()
             print("Initialized EC sensor")
             
@@ -237,13 +254,13 @@ async def main():
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, signal_handler)
         
-    try:
+    # try:
         # Initialize and start the system
         await system.initialize()
         await system.start()
-    except Exception as e:
-        print(f"Error: {e}")
-        system.cleanup()
+    # except Exception as e:
+    #     print(f"Error: {e}")
+    #     system.cleanup()
         
 if __name__ == "__main__":
     asyncio.run(main())
