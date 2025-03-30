@@ -7,6 +7,11 @@
     startController,
     stopController
   } from '$lib/stores';
+  import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
+  import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
+  import { Button } from "$lib/components/ui/button";
+  import { Badge } from "$lib/components/ui/badge";
   
   // Form values
   let phTarget = 0;
@@ -92,154 +97,194 @@
   });
 </script>
 
-<h2>Controllers</h2>
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h2 class="text-3xl font-bold tracking-tight">Controllers</h2>
+  </div>
 
-<div class="row">
-  <!-- pH Controller -->
-  <div class="col-md-4 mb-4">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">pH Controller</h5>
+  <div class="grid gap-6 md:grid-cols-3">
+    <!-- pH Controller -->
+    <Card>
+      <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle class="text-xl font-bold">pH Controller</CardTitle>
         {#if $controllerData.ph}
-          <button 
-            class="btn btn-sm {$controllerData.ph.running ? 'btn-danger' : 'btn-success'}"
+          <Button 
+            variant={$controllerData.ph.running ? "destructive" : "default"}
+            size="sm"
             on:click={togglePHController}
           >
             {$controllerData.ph.running ? 'Stop' : 'Start'}
-          </button>
+          </Button>
         {/if}
-      </div>
-      <div class="card-body">
+      </CardHeader>
+      <CardContent>
         {#if $controllerData.ph}
-          <div class="mb-3">
-            <p>Current pH: <strong>{$controllerData.ph.current_ph ? $controllerData.ph.current_ph.toFixed(2) : 'N/A'}</strong></p>
-            <p>Target pH: <strong>{$controllerData.ph.target_ph.toFixed(2)}</strong></p>
-            <p>Tolerance: <strong>±{$controllerData.ph.tolerance.toFixed(2)}</strong></p>
-            <p>Status: 
-              <span class="badge {$controllerData.ph.running ? 'bg-success' : 'bg-secondary'}">
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between">
+              <span class="text-sm text-muted-foreground">Current pH:</span>
+              <span class="font-medium">{$controllerData.ph.current_ph ? $controllerData.ph.current_ph.toFixed(2) : 'N/A'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-muted-foreground">Target pH:</span>
+              <span class="font-medium">{$controllerData.ph.target_ph.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-muted-foreground">Tolerance:</span>
+              <span class="font-medium">±{$controllerData.ph.tolerance.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-muted-foreground">Status:</span>
+              <Badge variant={$controllerData.ph.running ? "success" : "secondary"}>
                 {$controllerData.ph.running ? 'Running' : 'Stopped'}
-              </span>
-            </p>
+              </Badge>
+            </div>
             {#if $controllerData.ph.last_dose_time > 0}
-              <p>Last dose: {new Date($controllerData.ph.last_dose_time * 1000).toLocaleString()}</p>
+              <div class="flex justify-between">
+                <span class="text-sm text-muted-foreground">Last dose:</span>
+                <span class="text-sm">{new Date($controllerData.ph.last_dose_time * 1000).toLocaleString()}</span>
+              </div>
             {/if}
           </div>
           
-          <form on:submit|preventDefault={handlePHSubmit}>
-            <div class="mb-3">
-              <label for="phTarget" class="form-label">Target pH</label>
-              <input type="number" class="form-control" id="phTarget" bind:value={phTarget} step="0.1" min="0" max="14">
+          <form on:submit|preventDefault={handlePHSubmit} class="space-y-4">
+            <div class="space-y-2">
+              <Label for="phTarget">Target pH</Label>
+              <Input id="phTarget" type="number" bind:value={phTarget} step="0.1" min="0" max="14" />
             </div>
-            <div class="mb-3">
-              <label for="phTolerance" class="form-label">Tolerance (±)</label>
-              <input type="number" class="form-control" id="phTolerance" bind:value={phTolerance} step="0.1" min="0.1" max="1">
+            <div class="space-y-2">
+              <Label for="phTolerance">Tolerance (±)</Label>
+              <Input id="phTolerance" type="number" bind:value={phTolerance} step="0.1" min="0.1" max="1" />
             </div>
-            <button type="submit" class="btn btn-primary">Update</button>
+            <Button type="submit" class="w-full">Update</Button>
           </form>
         {:else}
-          <p>Loading pH controller data...</p>
+          <div class="py-4 text-center text-muted-foreground">Loading pH controller data...</div>
         {/if}
-      </div>
-    </div>
-  </div>
-  
-  <!-- ORP Controller -->
-  <div class="col-md-4 mb-4">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">ORP Controller</h5>
+      </CardContent>
+    </Card>
+    
+    <!-- ORP Controller -->
+    <Card>
+      <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle class="text-xl font-bold">ORP Controller</CardTitle>
         {#if $controllerData.orp}
-          <button 
-            class="btn btn-sm {$controllerData.orp.running ? 'btn-danger' : 'btn-success'}"
+          <Button 
+            variant={$controllerData.orp.running ? "destructive" : "default"}
+            size="sm"
             on:click={toggleORPController}
           >
             {$controllerData.orp.running ? 'Stop' : 'Start'}
-          </button>
+          </Button>
         {/if}
-      </div>
-      <div class="card-body">
+      </CardHeader>
+      <CardContent>
         {#if $controllerData.orp}
-          <div class="mb-3">
-            <p>Current ORP: <strong>{$controllerData.orp.current_orp ? $controllerData.orp.current_orp.toFixed(0) : 'N/A'} mV</strong></p>
-            <p>Target ORP: <strong>{$controllerData.orp.target_orp.toFixed(0)} mV</strong></p>
-            <p>Tolerance: <strong>±{$controllerData.orp.tolerance.toFixed(0)} mV</strong></p>
-            <p>Status: 
-              <span class="badge {$controllerData.orp.running ? 'bg-success' : 'bg-secondary'}">
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between">
+              <span class="text-sm text-muted-foreground">Current ORP:</span>
+              <span class="font-medium">{$controllerData.orp.current_orp ? $controllerData.orp.current_orp.toFixed(0) : 'N/A'} mV</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-muted-foreground">Target ORP:</span>
+              <span class="font-medium">{$controllerData.orp.target_orp.toFixed(0)} mV</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-muted-foreground">Tolerance:</span>
+              <span class="font-medium">±{$controllerData.orp.tolerance.toFixed(0)} mV</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-muted-foreground">Status:</span>
+              <Badge variant={$controllerData.orp.running ? "success" : "secondary"}>
                 {$controllerData.orp.running ? 'Running' : 'Stopped'}
-              </span>
-            </p>
+              </Badge>
+            </div>
             {#if $controllerData.orp.last_dose_time > 0}
-              <p>Last dose: {new Date($controllerData.orp.last_dose_time * 1000).toLocaleString()}</p>
+              <div class="flex justify-between">
+                <span class="text-sm text-muted-foreground">Last dose:</span>
+                <span class="text-sm">{new Date($controllerData.orp.last_dose_time * 1000).toLocaleString()}</span>
+              </div>
             {/if}
           </div>
           
-          <form on:submit|preventDefault={handleORPSubmit}>
-            <div class="mb-3">
-              <label for="orpTarget" class="form-label">Target ORP (mV)</label>
-              <input type="number" class="form-control" id="orpTarget" bind:value={orpTarget} step="10" min="0" max="1000">
+          <form on:submit|preventDefault={handleORPSubmit} class="space-y-4">
+            <div class="space-y-2">
+              <Label for="orpTarget">Target ORP (mV)</Label>
+              <Input id="orpTarget" type="number" bind:value={orpTarget} step="10" min="0" max="1000" />
             </div>
-            <div class="mb-3">
-              <label for="orpTolerance" class="form-label">Tolerance (±mV)</label>
-              <input type="number" class="form-control" id="orpTolerance" bind:value={orpTolerance} step="5" min="5" max="50">
+            <div class="space-y-2">
+              <Label for="orpTolerance">Tolerance (±mV)</Label>
+              <Input id="orpTolerance" type="number" bind:value={orpTolerance} step="5" min="5" max="50" />
             </div>
-            <button type="submit" class="btn btn-primary">Update</button>
+            <Button type="submit" class="w-full">Update</Button>
           </form>
         {:else}
-          <p>Loading ORP controller data...</p>
+          <div class="py-4 text-center text-muted-foreground">Loading ORP controller data...</div>
         {/if}
-      </div>
-    </div>
-  </div>
-  
-  <!-- EC Controller -->
-  <div class="col-md-4 mb-4">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">EC Controller</h5>
+      </CardContent>
+    </Card>
+    
+    <!-- EC Controller -->
+    <Card>
+      <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle class="text-xl font-bold">EC Controller</CardTitle>
         {#if $controllerData.ec}
-          <button 
-            class="btn btn-sm {$controllerData.ec.running ? 'btn-danger' : 'btn-success'}"
+          <Button 
+            variant={$controllerData.ec.running ? "destructive" : "default"}
+            size="sm"
             on:click={toggleECController}
           >
             {$controllerData.ec.running ? 'Stop' : 'Start'}
-          </button>
+          </Button>
         {/if}
-      </div>
-      <div class="card-body">
+      </CardHeader>
+      <CardContent>
         {#if $controllerData.ec}
-          <div class="mb-3">
-            <p>Current EC: <strong>{$controllerData.ec.current_ec ? $controllerData.ec.current_ec.toFixed(0) : 'N/A'} μS/cm</strong></p>
-            <p>Target EC: <strong>{$controllerData.ec.target_ec.toFixed(0)} μS/cm</strong></p>
-            <p>Tolerance: <strong>±{$controllerData.ec.tolerance.toFixed(0)} μS/cm</strong></p>
-            <p>Status: 
-              <span class="badge {$controllerData.ec.running ? 'bg-success' : 'bg-secondary'}">
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between">
+              <span class="text-sm text-muted-foreground">Current EC:</span>
+              <span class="font-medium">{$controllerData.ec.current_ec ? $controllerData.ec.current_ec.toFixed(0) : 'N/A'} μS/cm</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-muted-foreground">Target EC:</span>
+              <span class="font-medium">{$controllerData.ec.target_ec.toFixed(0)} μS/cm</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-muted-foreground">Tolerance:</span>
+              <span class="font-medium">±{$controllerData.ec.tolerance.toFixed(0)} μS/cm</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-muted-foreground">Status:</span>
+              <Badge variant={$controllerData.ec.running ? "success" : "secondary"}>
                 {$controllerData.ec.running ? 'Running' : 'Stopped'}
-              </span>
-            </p>
+              </Badge>
+            </div>
             {#if $controllerData.ec.last_dose_time > 0}
-              <p>Last dose: {new Date($controllerData.ec.last_dose_time * 1000).toLocaleString()}</p>
+              <div class="flex justify-between">
+                <span class="text-sm text-muted-foreground">Last dose:</span>
+                <span class="text-sm">{new Date($controllerData.ec.last_dose_time * 1000).toLocaleString()}</span>
+              </div>
             {/if}
           </div>
           
-          <form on:submit|preventDefault={handleECSubmit}>
-            <div class="mb-3">
-              <label for="ecTarget" class="form-label">Target EC (μS/cm)</label>
-              <input type="number" class="form-control" id="ecTarget" bind:value={ecTarget} step="50" min="0" max="3000">
+          <form on:submit|preventDefault={handleECSubmit} class="space-y-4">
+            <div class="space-y-2">
+              <Label for="ecTarget">Target EC (μS/cm)</Label>
+              <Input id="ecTarget" type="number" bind:value={ecTarget} step="50" min="0" max="3000" />
             </div>
-            <div class="mb-3">
-              <label for="ecTolerance" class="form-label">Tolerance (±μS/cm)</label>
-              <input type="number" class="form-control" id="ecTolerance" bind:value={ecTolerance} step="10" min="10" max="200">
+            <div class="space-y-2">
+              <Label for="ecTolerance">Tolerance (±μS/cm)</Label>
+              <Input id="ecTolerance" type="number" bind:value={ecTolerance} step="10" min="10" max="200" />
             </div>
-            <button type="submit" class="btn btn-primary">Update</button>
+            <Button type="submit" class="w-full">Update</Button>
           </form>
         {:else}
-          <p>Loading EC controller data...</p>
+          <div class="py-4 text-center text-muted-foreground">Loading EC controller data...</div>
         {/if}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   </div>
-</div>
 
-<div class="text-muted mt-2">
-  Last updated: {$controllerData.lastUpdated ? $controllerData.lastUpdated.toLocaleString() : 'Never'}
+  <div class="text-sm text-muted-foreground">
+    Last updated: {$controllerData.lastUpdated ? $controllerData.lastUpdated.toLocaleString() : 'Never'}
+  </div>
 </div>
