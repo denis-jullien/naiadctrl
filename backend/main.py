@@ -25,10 +25,11 @@ from outputs.mosfet_control import MOSFETControl
 # Import API
 from api.fastapi_routes import HydroFastAPI
 
+# Add this import at the top
+from history_storage import HistoryStorage
+
+# In the HydroponicSystem class, add history_storage initialization
 class HydroponicSystem:
-    """
-    Main hydroponic system application
-    """
     def __init__(self):
         """Initialize the hydroponic system"""
         self.config = Config()
@@ -36,6 +37,7 @@ class HydroponicSystem:
         self.controllers = {}
         self.outputs = None
         self.api = None
+        self.history_storage = None
         
     async def initialize(self):
         """Initialize all components"""
@@ -52,10 +54,116 @@ class HydroponicSystem:
         # Initialize controllers
         self._initialize_controllers()
         
+        # Initialize history storage
+        self.history_storage = HistoryStorage(self.config)
+        print("Initialized history storage")
+        
         # Initialize API
-        self.api = HydroFastAPI(self.sensors, self.controllers, self.config)
+        self.api = HydroFastAPI(self.sensors, self.controllers, self.config, self.outputs)
+        self.api.history_storage = self.history_storage
         
         print("Hydroponic system initialized")
+
+    # Add a method to update history with sensor data
+    async def update_history(self):
+        """Update history with current sensor data"""
+        if not self.history_storage:
+            return
+            
+        # Get current sensor readings
+        data = {}
+        
+        # pH
+        if 'ph' in self.sensors:
+            data['ph'] = await self.sensors['ph'].read_ph()
+            
+        # ORP
+        if 'orp' in self.sensors:
+            data['orp'] = await self.sensors['orp'].read_orp()
+            
+        # EC
+        if 'ec' in self.sensors:
+            data['ec'] = await self.sensors['ec'].read_ec()
+            
+        # Temperature (water)
+        if 'temperature' in self.sensors:
+            data['water_temperature'] = await self.sensors['temperature'].read_temperature()
+            
+        # Environment (air temperature and humidity)
+        if 'environment' in self.sensors:
+            temp, humidity = await self.sensors['environment'].read_measurement()
+            data['air_temperature'] = temp
+            data['humidity'] = humidity
+            
+        # Add data to history
+        self.history_storage.add_data_point(data)
+        
+    async def start(self):
+        """Start the hydroponic system"""
+        print("Starting hydroponic system...")
+        
+        # Start controllers
+        for controller_id, controller in self.controllers.items():
+            if not controller.running:
+                asyncio.create_task(controller.run())
+                print(f"Started {controller_id} controller")
+                
+        # Start history update task
+        history_update_interval = self.config.get('history', {}).get('update_interval', 60)  # Default 60 seconds
+        
+        async def history_update_task():
+            while True:
+                await self.update_history()
+                await asyncio.sleep(history_update_interval)
+                
+        asyncio.create_task(history_update_task())
+        print(f"Started history update task (interval: {history_update_interval}s)")
+                
+        # Start API server
+        api_config = self.config.get('api', {})
+        host = api_config.get('host', '0.0.0.0')
+        port = api_config.get('port', 8000)
+        
+        # Create a config for uvicorn
+        config = uvicorn.Config(
+            self.api.app,
+            host=host,
+            port=port,
+            log_level="info"
+        )
+        
+        # Create and start the server
+        server = uvicorn.Server(config)
+        await server.serve()
+        
+        print(f"API server started at http://{host}:{port}")
+            
+    def cleanup(self):
+        """Clean up resources"""
+        print("Cleaning up resources...")
+        
+        # Save history data
+        if self.history_storage:
+            self.history_storage.save()
+            
+        # Stop controllers
+        for controller_id, controller in self.controllers.items():
+            controller.stop()
+            
+        # Clean up sensors
+        for sensor_id, sensor in self.sensors.items():
+            # Check if the sensor has a close method before calling it
+            if hasattr(sensor, 'close'):
+                try:
+                    sensor.close()
+                except Exception as e:
+                    print(f"Error closing {sensor_id} sensor: {e}")
+            
+        # Clean up outputs
+        if self.outputs:
+            self.outputs.close()
+            
+        print("Cleanup complete")
         
     async def _initialize_sensors(self):
         """Initialize all sensors"""
@@ -259,35 +367,7 @@ class HydroponicSystem:
                 check_interval=check_interval
             )
             print("Initialized EC controller")
-            
-    async def start(self):
-        """Start the hydroponic system"""
-        print("Starting hydroponic system...")
         
-        # Start controllers
-        for controller_id, controller in self.controllers.items():
-            if not controller.running:
-                asyncio.create_task(controller.run())
-                print(f"Started {controller_id} controller")
-                
-        # Start API server
-        api_config = self.config.get('api', {})
-        host = api_config.get('host', '0.0.0.0')
-        port = api_config.get('port', 8000)
-        
-        # Create a config for uvicorn
-        config = uvicorn.Config(
-            self.api.app,
-            host=host,
-            port=port,
-            log_level="info"
-        )
-        
-        # Create and start the server
-        server = uvicorn.Server(config)
-        await server.serve()
-        
-        print(f"API server started at http://{host}:{port}")
             
     def cleanup(self):
         """Clean up resources"""

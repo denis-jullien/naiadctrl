@@ -256,6 +256,33 @@ export async function calibrateEC(ec) {
 }
 
 // Function to get formatted data for LayerChart
+// Add history fetching function
+export async function fetchSensorHistory() {
+  try {
+    const response = await fetch(`${API_BASE}/history`);
+    const data = await response.json();
+    
+    console.log('History Data:', data);
+    
+    // Update history store
+    sensorHistory.set({
+      ph: data.ph || [],
+      orp: data.orp || [],
+      ec: data.ec || [],
+      water_temperature: data.water_temperature || [],
+      air_temperature: data.air_temperature || [],
+      humidity: data.humidity || [],
+      timestamps: data.timestamps || []
+    });
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching history data:', error);
+    return null;
+  }
+}
+
+// Update the getChartData function to handle the new data format
 export function getChartData(sensorType) {
   let data = [];
   let $history;
@@ -268,8 +295,6 @@ export function getChartData(sensorType) {
   if (!$history || !$history.timestamps || !$history[sensorType]) {
     return data;
   }
-
-  console.log('history:', $history);
   
   // Format data for LayerChart
   for (let i = 0; i < $history.timestamps.length; i++) {
@@ -281,19 +306,5 @@ export function getChartData(sensorType) {
     }
   }
   
-  console.log('Formatted Data:', data);
   return data;
-}
-
-// Function to clear history
-export function clearHistory() {
-  sensorHistory.set({
-    ph: [],
-    orp: [],
-    ec: [],
-    water_temperature: [],
-    air_temperature: [],
-    humidity: [],
-    timestamps: []
-  });
 }

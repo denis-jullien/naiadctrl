@@ -372,3 +372,40 @@ class HydroFastAPI:
             #     if isinstance(e, HTTPException):
             #         raise e
             #     raise HTTPException(status_code=500, detail=str(e))
+            
+            # Add this to the existing HydroFastAPI class
+            
+        # History routes
+        @self.app.get("/api/history")
+        async def get_history(limit: int = None):
+            try:
+                if not hasattr(self, 'history_storage'):
+                    raise HTTPException(status_code=500, detail="History storage not initialized")
+                    
+                history_data = self.history_storage.get_history(limit)
+                return history_data
+                
+            except Exception as e:
+                if isinstance(e, HTTPException):
+                    raise e
+                raise HTTPException(status_code=500, detail=str(e))
+                
+        @self.app.delete("/api/history")
+        async def clear_history():
+            try:
+                if not hasattr(self, 'history_storage'):
+                    raise HTTPException(status_code=500, detail="History storage not initialized")
+                    
+                # Clear all history data
+                for key in self.history_storage.history:
+                    self.history_storage.history[key].clear()
+                    
+                # Save empty history
+                self.history_storage.save()
+                
+                return {"success": True}
+                
+            except Exception as e:
+                if isinstance(e, HTTPException):
+                    raise e
+                raise HTTPException(status_code=500, detail=str(e))

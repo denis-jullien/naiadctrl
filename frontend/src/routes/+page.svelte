@@ -1,8 +1,9 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { sensorData, controllerData, sensorHistory, fetchSensorData, fetchControllerData, getChartData } from '$lib/stores';
+  import { sensorData, controllerData, sensorHistory, fetchSensorData, fetchControllerData, fetchSensorHistory, getChartData } from '$lib/stores';
   import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
   import { Badge } from "$lib/components/ui/badge";
+  import { Button } from "$lib/components/ui/button";
   import { LineChart, AreaChart } from 'layerchart';
   import {
     Axis,
@@ -164,7 +165,10 @@
   
   onMount(async () => {
     // Initial data fetch
-    await updateData();
+    await Promise.all([
+      updateData(),
+      fetchSensorHistory()
+    ]);
     
     // Set up interval for regular updates
     intervalId = setInterval(updateData, UPDATE_INTERVAL);
@@ -195,6 +199,13 @@
 </script>
 
 <div class="space-y-8">
+  <div class="flex items-center justify-between">
+    <h2 class="text-3xl font-bold tracking-tight">Dashboard</h2>
+    <div class="space-x-2">
+      <Button variant="outline" onclick={updateData}>Refresh Data</Button>
+      <Button variant="outline" onclick={fetchSensorHistory}>Refresh History</Button>
+    </div>
+  </div>
   <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
     <!-- pH Card -->
     <Card>
@@ -331,7 +342,7 @@
           }}
         />
         </div>
-        <div
+        <!-- <div
           class="h-[300px]"
           on:mousemove={(e) => {
             const x = e.clientX;
@@ -348,7 +359,7 @@
             grid: { tweened: true },
           }}
         />
-      </div>
+      </div> -->
       </CardContent>
     </Card>
   </div>
