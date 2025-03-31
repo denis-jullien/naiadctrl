@@ -268,6 +268,8 @@ export function getChartData(sensorType) {
   if (!$history || !$history.timestamps || !$history[sensorType]) {
     return data;
   }
+
+  console.log('history:', $history);
   
   // Format data for LayerChart
   for (let i = 0; i < $history.timestamps.length; i++) {
@@ -279,6 +281,7 @@ export function getChartData(sensorType) {
     }
   }
   
+  console.log('Formatted Data:', data);
   return data;
 }
 
