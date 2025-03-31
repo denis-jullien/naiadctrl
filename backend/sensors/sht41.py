@@ -1,35 +1,50 @@
 import asyncio
-import smbus2
-import time
+import board
+import adafruit_sht4x
 
 class SHT41:
     """
-    SHT41 temperature and humidity sensor (I2C)
+    SHT41 temperature and humidity sensor using Adafruit CircuitPython library
     """
-    # SHT41 I2C address
-    ADDRESS = 0x44
-    
-    # Commands
-    CMD_MEASURE_HIGH_PRECISION = 0xFD
-    CMD_MEASURE_MEDIUM_PRECISION = 0xF6
-    CMD_MEASURE_LOW_PRECISION = 0xE0
-    CMD_READ_SERIAL = 0x89
-    CMD_SOFT_RESET = 0x94
-    
     def __init__(self, bus_number=1):
         """
         Initialize SHT41 sensor
         
         Args:
-            bus_number: I2C bus number
+            bus_number: I2C bus number (used to select the appropriate board I2C)
         """
-        self.bus = smbus2.SMBus(bus_number)
+        self.bus_number = bus_number
+        self.sensor = None
+        self.initialized = False
         
     async def initialize(self):
         """Initialize the sensor"""
-        # Soft reset
-        self.bus.write_byte(self.ADDRESS, self.CMD_SOFT_RESET)
-        await asyncio.sleep(0.01)  # 10ms delay
+        try:
+            # Create I2C interface based on bus number
+            if self.bus_number == 1:
+                i2c = board.I2C()  # uses board.SCL and board.SDA
+            else:
+                # For custom I2C pins, you would need to specify them
+                # This is just a placeholder for other bus numbers
+                i2c = board.I2C()
+                
+            # Create sensor object
+            self.sensor = adafruit_sht4x.SHT4x(i2c)
+            
+            # Set to high precision mode by default
+            self.sensor.mode = adafruit_sht4x.Mode.NOHEAT_HIGHPRECISION
+            
+            # Check if sensor is responding by reading serial number
+            serial = self.sensor.serial_number
+            print(f"SHT4X sensor initialized. Serial number: {serial}")
+            
+            self.initialized = True
+            return True
+            
+        except Exception as e:
+            print(f"Error initializing SHT4X sensor: {e}")
+            self.initialized = False
+            return False
         
     async def read_measurement(self, precision="high"):
         """
@@ -41,44 +56,34 @@ class SHT41:
         Returns:
             tuple: (temperature in °C, relative humidity in %)
         """
-        # Select command based on precision
-        if precision == "medium":
-            cmd = self.CMD_MEASURE_MEDIUM_PRECISION
-        elif precision == "low":
-            cmd = self.CMD_MEASURE_LOW_PRECISION
-        else:
-            cmd = self.CMD_MEASURE_HIGH_PRECISION
+        if not self.initialized or self.sensor is None:
+            print("SHT4X sensor not initialized")
+            return None, None
             
-        # Send measurement command
-        self.bus.write_byte(self.ADDRESS, cmd)
-        
-        # Wait for measurement to complete
-        if precision == "high":
-            await asyncio.sleep(0.01)  # 10ms
-        elif precision == "medium":
-            await asyncio.sleep(0.005)  # 5ms
-        else:
-            await asyncio.sleep(0.002)  # 2ms
+        try:
+            # Set precision mode
+            if precision == "medium":
+                self.sensor.mode = adafruit_sht4x.Mode.NOHEAT_MEDIUMPRECISION
+            elif precision == "low":
+                self.sensor.mode = adafruit_sht4x.Mode.NOHEAT_LOWPRECISION
+            else:
+                self.sensor.mode = adafruit_sht4x.Mode.NOHEAT_HIGHPRECISION
+                
+            # Read measurement
+            temperature, humidity = self.sensor.measurements
             
-        # Read data (6 bytes: temp MSB, temp LSB, temp CRC, hum MSB, hum LSB, hum CRC)
-        data = self.bus.read_i2c_block_data(self.ADDRESS, 0, 6)
-        
-        # Convert temperature
-        temp_raw = (data[0] << 8) | data[1]
-        temperature = -45 + 175 * temp_raw / 65535.0
-        
-        # Convert humidity
-        hum_raw = (data[3] << 8) | data[4]
-        humidity = 100 * hum_raw / 65535.0
-        
-        return temperature, humidity
+            return temperature, humidity
+            
+        except Exception as e:
+            print(f"Error reading from SHT4X sensor: {e}")
+            return None, None
         
     async def read_temperature(self):
         """
         Read temperature
         
         Returns:
-            float: Temperature in °C
+            float: Temperature in °C or None if error
         """
         temp, _ = await self.read_measurement()
         return temp
@@ -88,11 +93,13 @@ class SHT41:
         Read humidity
         
         Returns:
-            float: Relative humidity in %
+            float: Relative humidity in % or None if error
         """
         _, humidity = await self.read_measurement()
         return humidity
         
     def close(self):
         """Clean up resources"""
-        self.bus.close()
+        # No explicit cleanup needed for the Adafruit library
+        self.sensor = None
+        self.initialized = False
