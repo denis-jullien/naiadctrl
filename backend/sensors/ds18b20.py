@@ -35,6 +35,8 @@ class DS18B20:
                 self.device_file = device_folders[0] + '/w1_slave'
             else:
                 raise RuntimeError("No DS18B20 temperature sensors found")
+
+            print(f"Found DS18B20 sensor with ID: {device_folders[0]}")
                 
     async def _read_temp_raw(self):
         """Read raw temperature data from the sensor"""

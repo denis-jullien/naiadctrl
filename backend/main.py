@@ -1,7 +1,8 @@
 import asyncio
-from aiohttp import web
 import signal
 import sys
+import uvicorn
+from fastapi import FastAPI
 
 # Import configuration
 from config import Config
@@ -22,7 +23,7 @@ from controllers.ec_controller import ECController
 from outputs.mosfet_control import MOSFETControl
 
 # Import API
-from api.routes import HydroAPI
+from api.fastapi_routes import HydroFastAPI
 
 class HydroponicSystem:
     """
@@ -34,7 +35,6 @@ class HydroponicSystem:
         self.sensors = {}
         self.controllers = {}
         self.outputs = None
-        self.app = web.Application()
         self.api = None
         
     async def initialize(self):
@@ -53,7 +53,7 @@ class HydroponicSystem:
         self._initialize_controllers()
         
         # Initialize API
-        self.api = HydroAPI(self.app, self.sensors, self.controllers, self.config)
+        self.api = HydroFastAPI(self.sensors, self.controllers, self.config)
         
         print("Hydroponic system initialized")
         
@@ -267,8 +267,7 @@ class HydroponicSystem:
         # Start controllers
         for controller_id, controller in self.controllers.items():
             if not controller.running:
-                # Use asyncio.get_event_loop() instead of self.app.loop
-                asyncio.get_event_loop().create_task(controller.run())
+                asyncio.create_task(controller.run())
                 print(f"Started {controller_id} controller")
                 
         # Start API server
@@ -276,16 +275,19 @@ class HydroponicSystem:
         host = api_config.get('host', '0.0.0.0')
         port = api_config.get('port', 8000)
         
-        runner = web.AppRunner(self.app)
-        await runner.setup()
-        site = web.TCPSite(runner, host, port)
-        await site.start()
+        # Create a config for uvicorn
+        config = uvicorn.Config(
+            self.api.app,
+            host=host,
+            port=port,
+            log_level="info"
+        )
+        
+        # Create and start the server
+        server = uvicorn.Server(config)
+        await server.serve()
         
         print(f"API server started at http://{host}:{port}")
-        
-        # Keep the application running
-        while True:
-            await asyncio.sleep(1)
             
     def cleanup(self):
         """Clean up resources"""
