@@ -331,16 +331,20 @@
         <CardTitle>Temperature History</CardTitle>
       </CardHeader>
       <CardContent>
+  
         <div class="h-[300px] ">
-          <LineChart
-          data={dynamicData.map((d, i) => ({ date: i, value: d }))}
-          x="date"
-          series={[{ key: "value", color: "hsl(var(--primary))" }]}
+          {#if $sensorHistory["timestamps"].length > 0}
+          <!-- <LineChart
+          data={$sensorHistory}
+          x="humidity"
+          series={[{ key: "water_temperature", color: "hsl(var(--primary))" }]}
           props={{
             yAxis: { tweened: true },
             grid: { tweened: true },
           }}
-        />
+        /> -->
+        {$sensorHistory.air_temperature}
+        {/if}
         </div>
         <!-- <div
           class="h-[300px]"
@@ -364,7 +368,7 @@
     </Card>
   </div>
 
- 
+ <!-- sensorHistory{$sensorHistory["air_temperature"]} -->
 
   <div class="text-xs text-muted-foreground">
     Last updated: {$sensorData.lastUpdated ? $sensorData.lastUpdated.toLocaleString() : 'Never'}
