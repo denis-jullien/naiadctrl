@@ -104,6 +104,8 @@ export async function fetchControllerData() {
   try {
     const response = await fetch(`${API_BASE}/controllers`);
     const data = await response.json();
+
+    console.log('Controller Data:', data);
     
     controllerData.update(current => ({
       ...current,

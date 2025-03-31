@@ -10,6 +10,7 @@
   const navItems = [
     { href: '/', label: 'Dashboard' },
     { href: '/sensors', label: 'Sensors' },
+    { href: '/outputs', label: 'Outputs' },
     { href: '/controllers', label: 'Controllers' },
     { href: '/calibration', label: 'Calibration' },
     { href: '/settings', label: 'Settings' }

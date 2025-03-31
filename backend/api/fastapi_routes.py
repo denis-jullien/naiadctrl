@@ -8,7 +8,7 @@ class HydroFastAPI:
     """
     FastAPI implementation for the hydroponic system
     """
-    def __init__(self, sensors, controllers, config):
+    def __init__(self, sensors, controllers, config, outputs):
         """
         Initialize API
         
@@ -21,6 +21,7 @@ class HydroFastAPI:
         self.sensors = sensors
         self.controllers = controllers
         self.config = config
+        self.outputs = outputs
         
         # Setup CORS
         self.app.add_middleware(
@@ -315,3 +316,59 @@ class HydroFastAPI:
                 
             except Exception as e:
                 raise HTTPException(status_code=500, detail=str(e))
+                
+        # MOSFET test routes
+        @self.app.post("/api/outputs/test")
+        async def test_output(data: dict, background_tasks: BackgroundTasks):
+            try:
+                pin = data.get('pin')
+                state = data.get('state', False)
+                duration = data.get('duration', 1.0)  # Default 1 second
+                
+                if pin is None:
+                    raise HTTPException(status_code=400, detail="Pin number is required")
+                
+                if not self.outputs:
+                    raise HTTPException(status_code=500, detail="Output controller not initialized")
+                
+                # Set the output state
+                self.outputs.set_output(pin, state)
+                
+                # If duration is provided, schedule turning it off after the duration
+                if state and duration > 0:
+                    async def turn_off_after_delay():
+                        await asyncio.sleep(duration)
+                        self.outputs.set_output(pin, False)
+                    
+                    background_tasks.add_task(turn_off_after_delay)
+                
+                return {"success": True, "pin": pin, "state": state}
+                
+            except Exception as e:
+                if isinstance(e, HTTPException):
+                    raise e
+                raise HTTPException(status_code=500, detail=str(e))
+                
+        @self.app.get("/api/outputs")
+        async def get_outputs():
+            # try:
+            if not self.outputs:
+                raise HTTPException(status_code=500, detail="Output controller not initialized")
+            
+            # Get the configured pins from config
+            mosfet_pins = self.config.get('outputs', {}).get('mosfet_pins', [])
+            
+            # Get the current state of each pin
+            output_states = {}
+            for pin in mosfet_pins:
+                output_states[pin] = self.outputs.get_state(pin)
+            
+            return {
+                "pins": mosfet_pins,
+                "states": output_states
+            }
+                
+            # except Exception as e:
+            #     if isinstance(e, HTTPException):
+            #         raise e
+            #     raise HTTPException(status_code=500, detail=str(e))
