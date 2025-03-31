@@ -237,7 +237,7 @@
         </Tabs>
       </CardContent>
       <CardFooter>
-        <Button on:click={updateConfig}>Save Configuration</Button>
+        <Button onclick={updateConfig}>Save Configuration</Button>
       </CardFooter>
     </Card>
     

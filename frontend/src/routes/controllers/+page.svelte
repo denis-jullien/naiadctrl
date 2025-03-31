@@ -111,7 +111,7 @@
           <Button 
             variant={$controllerData.ph.running ? "destructive" : "default"}
             size="sm"
-            on:click={togglePHController}
+            onclick={togglePHController}
           >
             {$controllerData.ph.running ? 'Stop' : 'Start'}
           </Button>
@@ -231,7 +231,7 @@
           <Button 
             variant={$controllerData.ec.running ? "destructive" : "default"}
             size="sm"
-            on:click={toggleECController}
+            onclick={toggleECController}
           >
             {$controllerData.ec.running ? 'Stop' : 'Start'}
           </Button>
