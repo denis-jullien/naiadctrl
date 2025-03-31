@@ -52,6 +52,8 @@ export async function fetchSensorData() {
   try {
     const response = await fetch(`${API_BASE}/sensors`);
     const data = await response.json();
+
+    console.log('Sensor Data:', data);
     
     // Update current sensor data
     sensorData.update(current => ({

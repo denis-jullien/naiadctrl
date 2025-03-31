@@ -28,32 +28,32 @@
   // Helper function to get progress color based on value
   function getPhColor(value) {
     if (!value) return "bg-gray-200";
-    return value < 6 ? "bg-destructive" : value > 8 ? "bg-warning" : "bg-success";
+    return value < 6 ? "bg-red-600" : value > 8 ? "bg-orange-500" : "bg-green-500";
   }
   
   function getOrpColor(value) {
     if (!value) return "bg-gray-200";
-    return value < 400 ? "bg-destructive" : value > 800 ? "bg-warning" : "bg-success";
+    return value < 400 ? "bg-red-600" : value > 800 ? "bg-orange-500" : "bg-green-500";
   }
   
   function getEcColor(value) {
     if (!value) return "bg-gray-200";
-    return value < 800 ? "bg-warning" : value > 2000 ? "bg-destructive" : "bg-success";
+    return value < 800 ? "bg-orange-500" : value > 2000 ? "bg-red-600" : "bg-green-500";
   }
   
   function getTempColor(value) {
     if (!value) return "bg-gray-200";
-    return value < 18 ? "bg-blue-500" : value > 26 ? "bg-destructive" : "bg-success";
+    return value < 18 ? "bg-blue-500" : value > 26 ? "bg-red-600" : "bg-green-500";
   }
   
   function getAirTempColor(value) {
     if (!value) return "bg-gray-200";
-    return value < 18 ? "bg-blue-500" : value > 30 ? "bg-destructive" : "bg-success";
+    return value < 18 ? "bg-blue-500" : value > 30 ? "bg-red-600" : "bg-green-500";
   }
   
   function getHumidityColor(value) {
     if (!value) return "bg-gray-200";
-    return value < 40 ? "bg-warning" : value > 80 ? "bg-blue-500" : "bg-success";
+    return value < 40 ? "bg-orange-500" : value > 80 ? "bg-blue-500" : "bg-green-500";
   }
 </script>
 
