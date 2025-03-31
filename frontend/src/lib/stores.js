@@ -262,7 +262,7 @@ export async function fetchSensorHistory() {
     const response = await fetch(`${API_BASE}/history`);
     const data = await response.json();
     
-    console.log('History Data:', data);
+    
     
     // Update history store
     sensorHistory.set({
@@ -274,6 +274,8 @@ export async function fetchSensorHistory() {
       humidity: data.humidity || [],
       timestamps: data.timestamps || []
     });
+
+    console.log('History Data:', sensorHistory);
     
     return data;
   } catch (error) {

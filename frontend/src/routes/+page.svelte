@@ -20,7 +20,7 @@
     pivotLonger,
   } from 'layerchart';
   import { scaleOrdinal, scaleSequential, scaleTime } from 'd3-scale';
-  import { formatDate, PeriodType } from '@layerstack/utils';
+  import { formatDate, humanizeDuration, PeriodType } from '@layerstack/utils';
   import { extent, flatGroup, group, ticks } from 'd3-array';
   
   // Update interval (in ms)
@@ -154,6 +154,27 @@
   let renderContext = 'svg';
   let debug = false;
   let dynamicData = ticks(-2, 2, 200).map(Math.sin);
+
+  let chartData2 = $state([]);
+
+  sensorHistory.subscribe((value) => {
+
+
+
+        chartData2 = value.timestamps.map((data, index) => {
+          return {
+            x: index,
+            air_temperature: value.air_temperature[index],
+            water_temperature: value.water_temperature[index],
+            humidity: value.humidity[index],
+            timestamp: data
+          };
+        });
+
+        console.log('chartData2:', chartData2);   
+     
+  });
+
   
   // Fetch data
   async function updateData() {
@@ -333,37 +354,23 @@
       <CardContent>
   
         <div class="h-[300px] ">
-          {#if $sensorHistory["timestamps"].length > 0}
-          <!-- <LineChart
-          data={$sensorHistory}
-          x="humidity"
-          series={[{ key: "water_temperature", color: "hsl(var(--primary))" }]}
-          props={{
-            yAxis: { tweened: true },
-            grid: { tweened: true },
-          }}
-        /> -->
-        {$sensorHistory.air_temperature}
-        {/if}
-        </div>
-        <!-- <div
-          class="h-[300px]"
-          on:mousemove={(e) => {
-            const x = e.clientX;
-            const y = e.clientY;
-            dynamicData = dynamicData.slice(-200).concat(Math.atan2(x, y));
-          }}
-        >
-        <LineChart
-          data={dynamicData.map((d, i) => ({ x: i, y: d }))}
+          <!-- todo : use pivotLonger ?-->
+          <LineChart
+          data={chartData2}
           x="x"
-          series={[{ key: "y", color: "hsl(var(--primary))" }]}
+          series={[
+            { key: "air_temperature", color: "hsl(var(--primary))" },
+            { key: "water_temperature", color: "red" },
+            { key: "humidity", color: "green" },
+            ]}
           props={{
             yAxis: { tweened: true },
             grid: { tweened: true },
           }}
+          yBaseline={undefined}
+          tooltip={true}
         />
-      </div> -->
+        </div>
       </CardContent>
     </Card>
   </div>
