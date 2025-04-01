@@ -147,16 +147,16 @@
 				<CardTitle>pH History</CardTitle>
 			</CardHeader>
 			<CardContent>
-        <UplotSvelte
+				<UplotSvelte
 					data={[history.timestamps, history.ph]}
 					options={{
 						width: 700,
 						height: 300,
 						scales: { x: { time: false } },
-						series: [{ label: 'time' }, { label: 'EC', stroke: 'green'}]
+						series: [{ label: 'time' }, { label: 'EC', stroke: 'green' }]
 					}}
 				/>
-      </CardContent>
+			</CardContent>
 		</Card>
 
 		<!-- ORP Chart -->
@@ -165,16 +165,16 @@
 				<CardTitle>ORP History</CardTitle>
 			</CardHeader>
 			<CardContent>
-        <UplotSvelte
+				<UplotSvelte
 					data={[history.timestamps, history.orp]}
 					options={{
 						width: 700,
 						height: 300,
 						scales: { x: { time: false } },
-						series: [{ label: 'time' }, { label: 'EC', stroke: 'red', value: makeFmt('mV')}]
+						series: [{ label: 'time' }, { label: 'EC', stroke: 'red', value: makeFmt('mV') }]
 					}}
 				/>
-      </CardContent>
+			</CardContent>
 		</Card>
 
 		<!-- EC Chart -->
@@ -189,7 +189,7 @@
 						width: 700,
 						height: 300,
 						scales: { x: { time: false } },
-						series: [{ label: 'time' }, { label: 'EC', stroke: 'red', value: makeFmt('μS/cm')}]
+						series: [{ label: 'time' }, { label: 'EC', stroke: 'red', value: makeFmt('μS/cm') }]
 					}}
 				/>
 			</CardContent>
