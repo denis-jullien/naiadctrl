@@ -63,31 +63,29 @@ export async function fetchSensorData() {
     }));
     
     // Update historical data
-    const timestamp = new Date().toISOString();
     sensorHistory.update(history => {
       // Add new data points
       const newHistory = { ...history };
       
       // Add timestamp
-      newHistory.timestamps = [...history.timestamps, timestamp];
+      newHistory.timestamps = [...history.timestamps, Date.now()];
       
       // Add sensor values
       Object.keys(data).forEach(key => {
-        if (key in newHistory) {
+        if (key in newHistory &&  key !== "timestamps") {
           newHistory[key] = [...history[key], data[key]];
         }
       });
       
-      // Trim arrays if they exceed maximum length
-      if (newHistory.timestamps.length > MAX_HISTORY_POINTS) {
-        newHistory.timestamps = newHistory.timestamps.slice(-MAX_HISTORY_POINTS);
-        
-        Object.keys(newHistory).forEach(key => {
-          if (key !== 'timestamps' && Array.isArray(newHistory[key])) {
-            newHistory[key] = newHistory[key].slice(-MAX_HISTORY_POINTS);
-          }
-        });
-      }
+      // // Trim arrays if they exceed maximum length
+      // if (newHistory.timestamps.length > MAX_HISTORY_POINTS) {
+
+      //   Object.keys(newHistory).forEach(key => {
+      //     if (Array.isArray(newHistory[key])) {
+      //       newHistory[key] = newHistory[key].slice(-MAX_HISTORY_POINTS);
+      //     }
+      //   });
+      // }
       
       return newHistory;
     });
@@ -262,8 +260,6 @@ export async function fetchSensorHistory() {
     const response = await fetch(`${API_BASE}/history`);
     const data = await response.json();
     
-    
-    
     // Update history store
     sensorHistory.set({
       ph: data.ph || [],
@@ -272,41 +268,14 @@ export async function fetchSensorHistory() {
       water_temperature: data.water_temperature || [],
       air_temperature: data.air_temperature || [],
       humidity: data.humidity || [],
-      timestamps: data.timestamps || []
+      timestamps: data.timestamps.map(date => new Date(date).getTime()) || []
     });
 
-    console.log('History Data:', sensorHistory);
+    console.log('History Data:', data);
     
     return data;
   } catch (error) {
     console.error('Error fetching history data:', error);
     return null;
   }
-}
-
-// Update the getChartData function to handle the new data format
-export function getChartData(sensorType) {
-  let data = [];
-  let $history;
-  
-  // Get the current value of the store
-  sensorHistory.subscribe(value => {
-    $history = value;
-  })();
-  
-  if (!$history || !$history.timestamps || !$history[sensorType]) {
-    return data;
-  }
-  
-  // Format data for LayerChart
-  for (let i = 0; i < $history.timestamps.length; i++) {
-    if ($history[sensorType][i] !== null && $history[sensorType][i] !== undefined) {
-      data.push({
-        x: new Date($history.timestamps[i]),
-        y: $history[sensorType][i]
-      });
-    }
-  }
-  
-  return data;
 }

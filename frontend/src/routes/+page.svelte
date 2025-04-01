@@ -1,27 +1,13 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { sensorData, controllerData, sensorHistory, fetchSensorData, fetchControllerData, fetchSensorHistory, getChartData } from '$lib/stores';
+  import { sensorData, controllerData, sensorHistory, fetchSensorData, fetchControllerData, fetchSensorHistory } from '$lib/stores';
   import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
-  import { LineChart, AreaChart } from 'layerchart';
-  import {
-    Axis,
-    Canvas,
-    Chart,
-    Highlight,
-    Labels,
-    Legend,
-    LinearGradient,
-    Spline,
-    Svg,
-    Text,
-    Tooltip,
-    pivotLonger,
-  } from 'layerchart';
-  import { scaleOrdinal, scaleSequential, scaleTime } from 'd3-scale';
-  import { formatDate, humanizeDuration, PeriodType } from '@layerstack/utils';
-  import { extent, flatGroup, group, ticks } from 'd3-array';
+
+  import UplotSvelte from '$lib/components/uplot-svelte.svelte';
+  import uPlot from 'uplot';
+  import 'uplot/dist/uPlot.min.css';
   
   // Update interval (in ms)
   const UPDATE_INTERVAL = 10000; // 10 seconds
@@ -29,147 +15,13 @@
   // Interval ID for cleanup
   let intervalId;
 
-  const dateSeriesData = [
-  {
-    "date": new Date('2025-03-01T23:00:00.000Z'),
-    "value": 60
-  },
-  {
-    "date": new Date('2025-03-02T23:00:00.000Z'),
-    "value": 96
-  },
-  {
-    "date": new Date('2025-03-03T23:00:00.000Z'),
-    "value": 65
-  },
-  {
-    "date": new Date('2025-03-04T23:00:00.000Z'),
-    "value": 75
-  },
-  {
-    "date": new Date('2025-03-05T23:00:00.000Z'),
-    "value": 78
-  },
-  {
-    "date": new Date('2025-03-06T23:00:00.000Z'),
-    "value": 50
-  },
-  {
-    "date": new Date('2025-03-07T23:00:00.000Z'),
-    "value": 83
-  },
-  {
-    "date": new Date('2025-03-08T23:00:00.000Z'),
-    "value": 70
-  },
-  {
-    "date": new Date('2025-03-09T23:00:00.000Z'),
-    "value": 57
-  },
-  {
-    "date": new Date('2025-03-10T23:00:00.000Z'),
-    "value": 55
-  },
-  {
-    "date": new Date('2025-03-11T23:00:00.000Z'),
-    "value": 86
-  },
-  {
-    "date": new Date('2025-03-12T23:00:00.000Z'),
-    "value": 73
-  },
-  {
-    "date": new Date('2025-03-13T23:00:00.000Z'),
-    "value": 58
-  },
-  {
-    "date": new Date('2025-03-14T23:00:00.000Z'),
-    "value": 85
-  },
-  {
-    "date": new Date('2025-03-15T23:00:00.000Z'),
-    "value": 85
-  },
-  {
-    "date": new Date('2025-03-16T23:00:00.000Z'),
-    "value": 57
-  },
-  {
-    "date": new Date('2025-03-17T23:00:00.000Z'),
-    "value": 93
-  },
-  {
-    "date": new Date('2025-03-18T23:00:00.000Z'),
-    "value": 89
-  },
-  {
-    "date": new Date('2025-03-19T23:00:00.000Z'),
-    "value": 59
-  },
-  {
-    "date": new Date('2025-03-20T23:00:00.000Z'),
-    "value": 57
-  },
-  {
-    "date": new Date('2025-03-21T23:00:00.000Z'),
-    "value": 61
-  },
-  {
-    "date": new Date('2025-03-22T23:00:00.000Z'),
-    "value": 78
-  },
-  {
-    "date": new Date('2025-03-23T23:00:00.000Z'),
-    "value": 71
-  },
-  {
-    "date": new Date('2025-03-24T23:00:00.000Z'),
-    "value": 92
-  },
-  {
-    "date": new Date('2025-03-25T23:00:00.000Z'),
-    "value": 87
-  },
-  {
-    "date": new Date('2025-03-26T23:00:00.000Z'),
-    "value": 87
-  },
-  {
-    "date": new Date('2025-03-27T23:00:00.000Z'),
-    "value": 83
-  },
-  {
-    "date": new Date('2025-03-28T23:00:00.000Z'),
-    "value": 83
-  },
-  {
-    "date": new Date('2025-03-29T23:00:00.000Z'),
-    "value": 70
-  },
-  {
-    "date": new Date('2025-03-30T22:00:00.000Z'),
-    "value": 94
-  }
-]
-  let renderContext = 'svg';
-  let debug = false;
-  let dynamicData = ticks(-2, 2, 200).map(Math.sin);
-
   let chartData2 = $state([]);
 
   sensorHistory.subscribe((value) => {
 
 
 
-        chartData2 = value.timestamps.map((data, index) => {
-          return {
-            x: index,
-            air_temperature: value.air_temperature[index],
-            water_temperature: value.water_temperature[index],
-            humidity: value.humidity[index],
-            timestamp: data
-          };
-        });
+        chartData2 = [value.timestamps, value.air_temperature];
 
         console.log('chartData2:', chartData2);   
      
@@ -202,21 +54,22 @@
     }
   });
   
-  // Chart options
-  const chartOptions = {
-    grid: {
-      x: {
-        show: true
-      },
-      y: {
-        show: true
-      }
-    },
-    tooltip: {
-      show: true
-    },
-    height: 250
-  };
+
+
+  let data = [
+        [1, 2, 3, 4, 5],
+        [1, 3, 2, 5, 4],
+    ];
+
+    let options = {
+        width: 800,
+        height: 300,
+        scales: { x: { time: false } },
+        series: [{ label: 'x' }, { label: 'y', stroke: 'red' }],
+    };
+
+    let flag = true;
+
 </script>
 
 <div class="space-y-8">
@@ -304,13 +157,7 @@
         <CardTitle>pH History</CardTitle>
       </CardHeader>
       <CardContent>
-        <LineChart
-          data={getChartData('ph')}
-          xKey="x"
-          yKey="y"
-          options={chartOptions}
-          color="#10b981"
-        />
+ 
       </CardContent>
     </Card>
 
@@ -320,13 +167,7 @@
         <CardTitle>ORP History</CardTitle>
       </CardHeader>
       <CardContent>
-        <LineChart
-          data={getChartData('orp')}
-          xKey="x"
-          yKey="y"
-          options={chartOptions}
-          color="#6366f1"
-        />
+
       </CardContent>
     </Card>
 
@@ -336,13 +177,9 @@
         <CardTitle>EC History</CardTitle>
       </CardHeader>
       <CardContent>
-        <LineChart
-          data={getChartData('ec')}
-          xKey="x"
-          yKey="y"
-          options={chartOptions}
-          color="#f59e0b"
-        />
+        {#if chartData2}
+        <UplotSvelte data={chartData2} {options}/>
+        {/if}
       </CardContent>
     </Card>
 
@@ -353,29 +190,15 @@
       </CardHeader>
       <CardContent>
   
-        <div class="h-[300px] ">
-          <!-- todo : use pivotLonger ?-->
-          <LineChart
-          data={chartData2}
-          x="x"
-          series={[
-            { key: "air_temperature", color: "hsl(var(--primary))" },
-            { key: "water_temperature", color: "red" },
-            { key: "humidity", color: "green" },
-            ]}
-          props={{
-            yAxis: { tweened: true },
-            grid: { tweened: true },
-          }}
-          yBaseline={undefined}
-          tooltip={true}
-        />
-        </div>
       </CardContent>
     </Card>
   </div>
 
+  
+
  <!-- sensorHistory{$sensorHistory["air_temperature"]} -->
+
+  {chartData2[0]}
 
   <div class="text-xs text-muted-foreground">
     Last updated: {$sensorData.lastUpdated ? $sensorData.lastUpdated.toLocaleString() : 'Never'}
