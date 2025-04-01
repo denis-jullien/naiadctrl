@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { configData, fetchConfig } from '$lib/stores';
+  import { config, fetchConfig } from '$lib/state.svelte';
   import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
   import { Tabs, TabsContent, TabsList, TabsTrigger } from "$lib/components/ui/tabs";
   import { Input } from "$lib/components/ui/input";
@@ -9,7 +9,7 @@
   import { Alert, AlertDescription } from "$lib/components/ui/alert";
   
   // Form values
-  let config = null;
+  let localConfig = {};
   let statusMessage = '';
   let activeTab = "sensors";
   
@@ -23,7 +23,7 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(config)
+        body: JSON.stringify(localConfig)
       });
       
       const result = await response.json();
@@ -42,12 +42,12 @@
   onMount(async () => {
     // Initial data fetch
     await fetchConfig();
-    config = JSON.parse(JSON.stringify($configData));
+    localConfig = JSON.parse(JSON.stringify(config.plop));
   });
   
   // Update local config when store changes
-  $: if ($configData && !config) {
-    config = JSON.parse(JSON.stringify($configData));
+  $: if (config.plop && !localConfig) {
+    localConfig = JSON.parse(JSON.stringify(config.plop));
   }
   
 </script>
@@ -57,7 +57,7 @@
     <h2 class="text-3xl font-bold tracking-tight">System Settings</h2>
   </div>
 
-  {#if config}
+  {#if localConfig.sensors}
     <Card>
       <CardHeader>
         <CardTitle>Configuration</CardTitle>
@@ -80,11 +80,11 @@
                 <div class="grid grid-cols-2 gap-4 mt-2">
                   <div class="space-y-2">
                     <Label for="ph-sck-pin">SCK Pin</Label>
-                    <Input id="ph-sck-pin" type="number" bind:value={config.sensors.ph.sck_pin} />
+                    <Input id="ph-sck-pin" type="number" bind:value={localConfig.sensors.ph.sck_pin} />
                   </div>
                   <div class="space-y-2">
                     <Label for="ph-data-pin">Data Pin</Label>
-                    <Input id="ph-data-pin" type="number" bind:value={config.sensors.ph.data_pin} />
+                    <Input id="ph-data-pin" type="number" bind:value={localConfig.sensors.ph.data_pin} />
                   </div>
                 </div>
               </div>
@@ -94,11 +94,11 @@
                 <div class="grid grid-cols-2 gap-4 mt-2">
                   <div class="space-y-2">
                     <Label for="orp-sck-pin">SCK Pin</Label>
-                    <Input id="orp-sck-pin" type="number" bind:value={config.sensors.orp.sck_pin} />
+                    <Input id="orp-sck-pin" type="number" bind:value={localConfig.sensors.orp.sck_pin} />
                   </div>
                   <div class="space-y-2">
                     <Label for="orp-data-pin">Data Pin</Label>
-                    <Input id="orp-data-pin" type="number" bind:value={config.sensors.orp.data_pin} />
+                    <Input id="orp-data-pin" type="number" bind:value={localConfig.sensors.orp.data_pin} />
                   </div>
                 </div>
               </div>
@@ -108,21 +108,21 @@
                 <div class="grid grid-cols-3 gap-4 mt-2">
                   <div class="space-y-2">
                     <Label for="ec-sck-pin">SCK Pin</Label>
-                    <Input id="ec-sck-pin" type="number" bind:value={config.sensors.ec.sck_pin} />
+                    <Input id="ec-sck-pin" type="number" bind:value={localConfig.sensors.ec.sck_pin} />
                   </div>
                   <div class="space-y-2">
                     <Label for="ec-data-pin">Data Pin</Label>
-                    <Input id="ec-data-pin" type="number" bind:value={config.sensors.ec.data_pin} />
+                    <Input id="ec-data-pin" type="number" bind:value={localConfig.sensors.ec.data_pin} />
                   </div>
                   <div class="space-y-2">
                     <Label for="ec-pwm-pin">PWM Pin</Label>
-                    <Input id="ec-pwm-pin" type="number" bind:value={config.sensors.ec.pwm_pin} />
+                    <Input id="ec-pwm-pin" type="number" bind:value={localConfig.sensors.ec.pwm_pin} />
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4 mt-4">
                   <div class="space-y-2">
                     <Label for="ec-k-value">K Value</Label>
-                    <Input id="ec-k-value" type="number" bind:value={config.sensors.ec.k_value} step="0.1" />
+                    <Input id="ec-k-value" type="number" bind:value={localConfig.sensors.ec.k_value} step="0.1" />
                   </div>
                 </div>
               </div>
@@ -132,7 +132,7 @@
                 <div class="grid grid-cols-2 gap-4 mt-2">
                   <div class="space-y-2">
                     <Label for="env-i2c-bus">I2C Bus</Label>
-                    <Input id="env-i2c-bus" type="number" bind:value={config.sensors.environment.i2c_bus} />
+                    <Input id="env-i2c-bus" type="number" bind:value={localConfig.sensors.environment.i2c_bus} />
                   </div>
                 </div>
               </div>
@@ -147,15 +147,15 @@
                 <div class="grid grid-cols-3 gap-4 mt-2">
                   <div class="space-y-2">
                     <Label for="ph-check-interval">Check Interval (seconds)</Label>
-                    <Input id="ph-check-interval" type="number" bind:value={config.controllers.ph.check_interval} />
+                    <Input id="ph-check-interval" type="number" bind:value={localConfig.controllers.ph.check_interval} />
                   </div>
                   <div class="space-y-2">
                     <Label for="ph-acid-pump-pin">Acid Pump Pin</Label>
-                    <Input id="ph-acid-pump-pin" type="number" bind:value={config.controllers.ph.acid_pump_pin} />
+                    <Input id="ph-acid-pump-pin" type="number" bind:value={localConfig.controllers.ph.acid_pump_pin} />
                   </div>
                   <div class="space-y-2">
                     <Label for="ph-base-pump-pin">Base Pump Pin</Label>
-                    <Input id="ph-base-pump-pin" type="number" bind:value={config.controllers.ph.base_pump_pin} />
+                    <Input id="ph-base-pump-pin" type="number" bind:value={localConfig.controllers.ph.base_pump_pin} />
                   </div>
                 </div>
               </div>
@@ -165,15 +165,15 @@
                 <div class="grid grid-cols-3 gap-4 mt-2">
                   <div class="space-y-2">
                     <Label for="orp-check-interval">Check Interval (seconds)</Label>
-                    <Input id="orp-check-interval" type="number" bind:value={config.controllers.orp.check_interval} />
+                    <Input id="orp-check-interval" type="number" bind:value={localConfig.controllers.orp.check_interval} />
                   </div>
                   <div class="space-y-2">
                     <Label for="orp-increase-pump-pin">Increase Pump Pin</Label>
-                    <Input id="orp-increase-pump-pin" type="number" bind:value={config.controllers.orp.increase_pump_pin} />
+                    <Input id="orp-increase-pump-pin" type="number" bind:value={localConfig.controllers.orp.increase_pump_pin} />
                   </div>
                   <div class="space-y-2">
                     <Label for="orp-decrease-pump-pin">Decrease Pump Pin</Label>
-                    <Input id="orp-decrease-pump-pin" type="number" bind:value={config.controllers.orp.decrease_pump_pin} />
+                    <Input id="orp-decrease-pump-pin" type="number" bind:value={localConfig.controllers.orp.decrease_pump_pin} />
                   </div>
                 </div>
               </div>
@@ -183,15 +183,15 @@
                 <div class="grid grid-cols-3 gap-4 mt-2">
                   <div class="space-y-2">
                     <Label for="ec-check-interval">Check Interval (seconds)</Label>
-                    <Input id="ec-check-interval" type="number" bind:value={config.controllers.ec.check_interval} />
+                    <Input id="ec-check-interval" type="number" bind:value={localConfig.controllers.ec.check_interval} />
                   </div>
                   <div class="space-y-2">
                     <Label for="ec-nutrient-pump-pin">Nutrient Pump Pin</Label>
-                    <Input id="ec-nutrient-pump-pin" type="number" bind:value={config.controllers.ec.nutrient_pump_pin} />
+                    <Input id="ec-nutrient-pump-pin" type="number" bind:value={localConfig.controllers.ec.nutrient_pump_pin} />
                   </div>
                   <div class="space-y-2">
                     <Label for="ec-water-pump-pin">Water Pump Pin</Label>
-                    <Input id="ec-water-pump-pin" type="number" bind:value={config.controllers.ec.water_pump_pin} />
+                    <Input id="ec-water-pump-pin" type="number" bind:value={localConfig.controllers.ec.water_pump_pin} />
                   </div>
                 </div>
               </div>
@@ -208,10 +208,10 @@
                   <Input 
                     id="mosfet-pins"
                     type="text" 
-                    value={config.outputs.mosfet_pins.join(', ')}
+                    value={localConfig.outputs.mosfet_pins.join(', ')}
                     on:input={(e) => {
                       const pins = e.target.value.split(',').map(pin => parseInt(pin.trim())).filter(pin => !isNaN(pin));
-                      config.outputs.mosfet_pins = pins;
+                      localConfig.outputs.mosfet_pins = pins;
                     }}
                   />
                 </div>
@@ -225,11 +225,11 @@
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <Label for="api-host">Host</Label>
-                  <Input id="api-host" type="text" bind:value={config.api.host} />
+                  <Input id="api-host" type="text" bind:value={localConfig.api.host} />
                 </div>
                 <div class="space-y-2">
                   <Label for="api-port">Port</Label>
-                  <Input id="api-port" type="number" bind:value={config.api.port} />
+                  <Input id="api-port" type="number" bind:value={localConfig.api.port} />
                 </div>
               </div>
             </div>

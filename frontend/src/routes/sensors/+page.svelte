@@ -1,6 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { sensorData, fetchSensorData } from '$lib/stores';
+  import { sensor, fetchSensorData } from '$lib/state.svelte';
   import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
   import { Progress } from "$lib/components/ui/progress";
   
@@ -70,15 +70,15 @@
       </CardHeader>
       <CardContent>
         <div class="flex items-center gap-4 mb-4">
-          <div class="text-5xl font-bold">{$sensorData.ph ? $sensorData.ph.toFixed(2) : 'N/A'}</div>
+          <div class="text-5xl font-bold">{sensor.ph ? sensor.ph.toFixed(2) : 'N/A'}</div>
           <div class="w-full max-w-md">
             <div class="h-8 w-full bg-secondary rounded-md overflow-hidden">
-              {#if $sensorData.ph}
+              {#if sensor.ph}
                 <div 
-                  class="h-full {getPhColor($sensorData.ph)} flex items-center justify-center text-white font-medium"
-                  style="width: {($sensorData.ph / 14) * 100}%"
+                  class="h-full {getPhColor(sensor.ph)} flex items-center justify-center text-white font-medium"
+                  style="width: {(sensor.ph / 14) * 100}%"
                 >
-                  pH {$sensorData.ph.toFixed(2)}
+                  pH {sensor.ph.toFixed(2)}
                 </div>
               {/if}
             </div>
@@ -109,15 +109,15 @@
       </CardHeader>
       <CardContent>
         <div class="flex items-center gap-4 mb-4">
-          <div class="text-5xl font-bold">{$sensorData.orp ? $sensorData.orp.toFixed(0) : 'N/A'} <span class="text-lg font-normal">mV</span></div>
+          <div class="text-5xl font-bold">{sensor.orp ? sensor.orp.toFixed(0) : 'N/A'} <span class="text-lg font-normal">mV</span></div>
           <div class="w-full max-w-md">
             <div class="h-8 w-full bg-secondary rounded-md overflow-hidden">
-              {#if $sensorData.orp}
+              {#if sensor.orp}
                 <div 
-                  class="h-full {getOrpColor($sensorData.orp)} flex items-center justify-center text-white font-medium"
-                  style="width: {($sensorData.orp / 1000) * 100}%"
+                  class="h-full {getOrpColor(sensor.orp)} flex items-center justify-center text-white font-medium"
+                  style="width: {(sensor.orp / 1000) * 100}%"
                 >
-                  {$sensorData.orp.toFixed(0)} mV
+                  {sensor.orp.toFixed(0)} mV
                 </div>
               {/if}
             </div>
@@ -148,15 +148,15 @@
       </CardHeader>
       <CardContent>
         <div class="flex items-center gap-4 mb-4">
-          <div class="text-5xl font-bold">{$sensorData.ec ? $sensorData.ec.toFixed(0) : 'N/A'} <span class="text-lg font-normal">μS/cm</span></div>
+          <div class="text-5xl font-bold">{sensor.ec ? sensor.ec.toFixed(0) : 'N/A'} <span class="text-lg font-normal">μS/cm</span></div>
           <div class="w-full max-w-md">
             <div class="h-8 w-full bg-secondary rounded-md overflow-hidden">
-              {#if $sensorData.ec}
+              {#if sensor.ec}
                 <div 
-                  class="h-full {getEcColor($sensorData.ec)} flex items-center justify-center text-white font-medium"
-                  style="width: {($sensorData.ec / 3000) * 100}%"
+                  class="h-full {getEcColor(sensor.ec)} flex items-center justify-center text-white font-medium"
+                  style="width: {(sensor.ec / 3000) * 100}%"
                 >
-                  {$sensorData.ec.toFixed(0)} μS/cm
+                  {sensor.ec.toFixed(0)} μS/cm
                 </div>
               {/if}
             </div>
@@ -189,14 +189,14 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div class="space-y-2">
             <h3 class="font-medium">Water Temperature</h3>
-            <div class="text-3xl font-bold">{$sensorData.water_temperature ? $sensorData.water_temperature.toFixed(1) : 'N/A'} <span class="text-sm font-normal">°C</span></div>
+            <div class="text-3xl font-bold">{sensor.water_temperature ? sensor.water_temperature.toFixed(1) : 'N/A'} <span class="text-sm font-normal">°C</span></div>
             <div class="h-6 w-full bg-secondary rounded-md overflow-hidden">
-              {#if $sensorData.water_temperature}
+              {#if sensor.water_temperature}
                 <div 
-                  class="h-full {getTempColor($sensorData.water_temperature)} flex items-center justify-center text-white text-xs font-medium"
-                  style="width: {($sensorData.water_temperature / 40) * 100}%"
+                  class="h-full {getTempColor(sensor.water_temperature)} flex items-center justify-center text-white text-xs font-medium"
+                  style="width: {(sensor.water_temperature / 40) * 100}%"
                 >
-                  {$sensorData.water_temperature.toFixed(1)}°C
+                  {sensor.water_temperature.toFixed(1)}°C
                 </div>
               {/if}
             </div>
@@ -209,14 +209,14 @@
           
           <div class="space-y-2">
             <h3 class="font-medium">Air Temperature</h3>
-            <div class="text-3xl font-bold">{$sensorData.air_temperature ? $sensorData.air_temperature.toFixed(1) : 'N/A'} <span class="text-sm font-normal">°C</span></div>
+            <div class="text-3xl font-bold">{sensor.air_temperature ? sensor.air_temperature.toFixed(1) : 'N/A'} <span class="text-sm font-normal">°C</span></div>
             <div class="h-6 w-full bg-secondary rounded-md overflow-hidden">
-              {#if $sensorData.air_temperature}
+              {#if sensor.air_temperature}
                 <div 
-                  class="h-full {getAirTempColor($sensorData.air_temperature)} flex items-center justify-center text-white text-xs font-medium"
-                  style="width: {($sensorData.air_temperature / 40) * 100}%"
+                  class="h-full {getAirTempColor(sensor.air_temperature)} flex items-center justify-center text-white text-xs font-medium"
+                  style="width: {(sensor.air_temperature / 40) * 100}%"
                 >
-                  {$sensorData.air_temperature.toFixed(1)}°C
+                  {sensor.air_temperature.toFixed(1)}°C
                 </div>
               {/if}
             </div>
@@ -230,14 +230,14 @@
         
         <div class="space-y-2 mt-4">
           <h3 class="font-medium">Humidity</h3>
-          <div class="text-3xl font-bold">{$sensorData.humidity ? $sensorData.humidity.toFixed(1) : 'N/A'} <span class="text-sm font-normal">%</span></div>
+          <div class="text-3xl font-bold">{sensor.humidity ? sensor.humidity.toFixed(1) : 'N/A'} <span class="text-sm font-normal">%</span></div>
           <div class="h-6 w-full bg-secondary rounded-md overflow-hidden">
-            {#if $sensorData.humidity}
+            {#if sensor.humidity}
               <div 
-                class="h-full {getHumidityColor($sensorData.humidity)} flex items-center justify-center text-white text-xs font-medium"
-                style="width: {$sensorData.humidity}%"
+                class="h-full {getHumidityColor(sensor.humidity)} flex items-center justify-center text-white text-xs font-medium"
+                style="width: {sensor.humidity}%"
               >
-                {$sensorData.humidity.toFixed(1)}%
+                {sensor.humidity.toFixed(1)}%
               </div>
             {/if}
           </div>
@@ -261,6 +261,6 @@
   </div>
 
   <div class="text-sm text-muted-foreground">
-    Last updated: {$sensorData.lastUpdated ? $sensorData.lastUpdated.toLocaleString() : 'Never'}
+    Last updated: {sensor.lastUpdated ? sensor.lastUpdated.toLocaleString() : 'Never'}
   </div>
 </div>

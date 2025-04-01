@@ -1,12 +1,12 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
   import { 
-    controllerData, 
+    controller, 
     fetchControllerData, 
     updateControllerTarget,
     startController,
     stopController
-  } from '$lib/stores';
+  } from '$lib/state.svelte';
   import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
@@ -28,19 +28,19 @@
   let intervalId;
   
   // Initialize form values from controller data
-  $: if ($controllerData.ph) {
-    phTarget = $controllerData.ph.target_ph;
-    phTolerance = $controllerData.ph.tolerance;
+  $: if (controller.ph) {
+    phTarget = controller.ph.target_ph;
+    phTolerance = controller.ph.tolerance;
   }
   
-  $: if ($controllerData.orp) {
-    orpTarget = $controllerData.orp.target_orp;
-    orpTolerance = $controllerData.orp.tolerance;
+  $: if (controller.orp) {
+    orpTarget = controller.orp.target_orp;
+    orpTolerance = controller.orp.tolerance;
   }
   
-  $: if ($controllerData.ec) {
-    ecTarget = $controllerData.ec.target_ec;
-    ecTolerance = $controllerData.ec.tolerance;
+  $: if (controller.ec) {
+    ecTarget = controller.ec.target_ec;
+    ecTolerance = controller.ec.tolerance;
   }
   
   // Handle form submissions
@@ -58,7 +58,7 @@
   
   // Handle controller start/stop
   async function togglePHController() {
-    if ($controllerData.ph.running) {
+    if (controller.ph.running) {
       await stopController('ph');
     } else {
       await startController('ph');
@@ -66,7 +66,7 @@
   }
   
   async function toggleORPController() {
-    if ($controllerData.orp.running) {
+    if (controller.orp.running) {
       await stopController('orp');
     } else {
       await startController('orp');
@@ -74,7 +74,7 @@
   }
   
   async function toggleECController() {
-    if ($controllerData.ec.running) {
+    if (controller.ec.running) {
       await stopController('ec');
     } else {
       await startController('ec');
@@ -107,41 +107,41 @@
     <Card>
       <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle class="text-xl font-bold">pH Controller</CardTitle>
-        {#if $controllerData.ph}
+        {#if controller.ph}
           <Button 
-            variant={$controllerData.ph.running ? "destructive" : "default"}
+            variant={controller.ph.running ? "destructive" : "default"}
             size="sm"
             onclick={togglePHController}
           >
-            {$controllerData.ph.running ? 'Stop' : 'Start'}
+            {controller.ph.running ? 'Stop' : 'Start'}
           </Button>
         {/if}
       </CardHeader>
       <CardContent>
-        {#if $controllerData.ph}
+        {#if controller.ph}
           <div class="space-y-2 mb-4">
             <div class="flex justify-between">
               <span class="text-sm text-muted-foreground">Current pH:</span>
-              <span class="font-medium">{$controllerData.ph.current_ph ? $controllerData.ph.current_ph.toFixed(2) : 'N/A'}</span>
+              <span class="font-medium">{controller.ph.current_ph ? controller.ph.current_ph.toFixed(2) : 'N/A'}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-sm text-muted-foreground">Target pH:</span>
-              <span class="font-medium">{$controllerData.ph.target_ph.toFixed(2)}</span>
+              <span class="font-medium">{controller.ph.target_ph.toFixed(2)}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-sm text-muted-foreground">Tolerance:</span>
-              <span class="font-medium">±{$controllerData.ph.tolerance.toFixed(2)}</span>
+              <span class="font-medium">±{controller.ph.tolerance.toFixed(2)}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-sm text-muted-foreground">Status:</span>
-              <Badge variant={$controllerData.ph.running ? "success" : "secondary"}>
-                {$controllerData.ph.running ? 'Running' : 'Stopped'}
+              <Badge variant={controller.ph.running ? "success" : "secondary"}>
+                {controller.ph.running ? 'Running' : 'Stopped'}
               </Badge>
             </div>
-            {#if $controllerData.ph.last_dose_time > 0}
+            {#if controller.ph.last_dose_time > 0}
               <div class="flex justify-between">
                 <span class="text-sm text-muted-foreground">Last dose:</span>
-                <span class="text-sm">{new Date($controllerData.ph.last_dose_time * 1000).toLocaleString()}</span>
+                <span class="text-sm">{new Date(controller.ph.last_dose_time * 1000).toLocaleString()}</span>
               </div>
             {/if}
           </div>
@@ -167,41 +167,41 @@
     <Card>
       <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle class="text-xl font-bold">ORP Controller</CardTitle>
-        {#if $controllerData.orp}
+        {#if controller.orp}
           <Button 
-            variant={$controllerData.orp.running ? "destructive" : "default"}
+            variant={controller.orp.running ? "destructive" : "default"}
             size="sm"
             on:click={toggleORPController}
           >
-            {$controllerData.orp.running ? 'Stop' : 'Start'}
+            {controller.orp.running ? 'Stop' : 'Start'}
           </Button>
         {/if}
       </CardHeader>
       <CardContent>
-        {#if $controllerData.orp}
+        {#if controller.orp}
           <div class="space-y-2 mb-4">
             <div class="flex justify-between">
               <span class="text-sm text-muted-foreground">Current ORP:</span>
-              <span class="font-medium">{$controllerData.orp.current_orp ? $controllerData.orp.current_orp.toFixed(0) : 'N/A'} mV</span>
+              <span class="font-medium">{controller.orp.current_orp ? controller.orp.current_orp.toFixed(0) : 'N/A'} mV</span>
             </div>
             <div class="flex justify-between">
               <span class="text-sm text-muted-foreground">Target ORP:</span>
-              <span class="font-medium">{$controllerData.orp.target_orp.toFixed(0)} mV</span>
+              <span class="font-medium">{controller.orp.target_orp.toFixed(0)} mV</span>
             </div>
             <div class="flex justify-between">
               <span class="text-sm text-muted-foreground">Tolerance:</span>
-              <span class="font-medium">±{$controllerData.orp.tolerance.toFixed(0)} mV</span>
+              <span class="font-medium">±{controller.orp.tolerance.toFixed(0)} mV</span>
             </div>
             <div class="flex justify-between">
               <span class="text-sm text-muted-foreground">Status:</span>
-              <Badge variant={$controllerData.orp.running ? "success" : "secondary"}>
-                {$controllerData.orp.running ? 'Running' : 'Stopped'}
+              <Badge variant={controller.orp.running ? "success" : "secondary"}>
+                {controller.orp.running ? 'Running' : 'Stopped'}
               </Badge>
             </div>
-            {#if $controllerData.orp.last_dose_time > 0}
+            {#if controller.orp.last_dose_time > 0}
               <div class="flex justify-between">
                 <span class="text-sm text-muted-foreground">Last dose:</span>
-                <span class="text-sm">{new Date($controllerData.orp.last_dose_time * 1000).toLocaleString()}</span>
+                <span class="text-sm">{new Date(controller.orp.last_dose_time * 1000).toLocaleString()}</span>
               </div>
             {/if}
           </div>
@@ -227,41 +227,41 @@
     <Card>
       <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle class="text-xl font-bold">EC Controller</CardTitle>
-        {#if $controllerData.ec}
+        {#if controller.ec}
           <Button 
-            variant={$controllerData.ec.running ? "destructive" : "default"}
+            variant={controller.ec.running ? "destructive" : "default"}
             size="sm"
             onclick={toggleECController}
           >
-            {$controllerData.ec.running ? 'Stop' : 'Start'}
+            {controller.ec.running ? 'Stop' : 'Start'}
           </Button>
         {/if}
       </CardHeader>
       <CardContent>
-        {#if $controllerData.ec}
+        {#if controller.ec}
           <div class="space-y-2 mb-4">
             <div class="flex justify-between">
               <span class="text-sm text-muted-foreground">Current EC:</span>
-              <span class="font-medium">{$controllerData.ec.current_ec ? $controllerData.ec.current_ec.toFixed(0) : 'N/A'} μS/cm</span>
+              <span class="font-medium">{controller.ec.current_ec ? controller.ec.current_ec.toFixed(0) : 'N/A'} μS/cm</span>
             </div>
             <div class="flex justify-between">
               <span class="text-sm text-muted-foreground">Target EC:</span>
-              <span class="font-medium">{$controllerData.ec.target_ec.toFixed(0)} μS/cm</span>
+              <span class="font-medium">{controller.ec.target_ec.toFixed(0)} μS/cm</span>
             </div>
             <div class="flex justify-between">
               <span class="text-sm text-muted-foreground">Tolerance:</span>
-              <span class="font-medium">±{$controllerData.ec.tolerance.toFixed(0)} μS/cm</span>
+              <span class="font-medium">±{controller.ec.tolerance.toFixed(0)} μS/cm</span>
             </div>
             <div class="flex justify-between">
               <span class="text-sm text-muted-foreground">Status:</span>
-              <Badge variant={$controllerData.ec.running ? "success" : "secondary"}>
-                {$controllerData.ec.running ? 'Running' : 'Stopped'}
+              <Badge variant={controller.ec.running ? "success" : "secondary"}>
+                {controller.ec.running ? 'Running' : 'Stopped'}
               </Badge>
             </div>
-            {#if $controllerData.ec.last_dose_time > 0}
+            {#if controller.ec.last_dose_time > 0}
               <div class="flex justify-between">
                 <span class="text-sm text-muted-foreground">Last dose:</span>
-                <span class="text-sm">{new Date($controllerData.ec.last_dose_time * 1000).toLocaleString()}</span>
+                <span class="text-sm">{new Date(controller.ec.last_dose_time * 1000).toLocaleString()}</span>
               </div>
             {/if}
           </div>
@@ -285,6 +285,6 @@
   </div>
 
   <div class="text-sm text-muted-foreground">
-    Last updated: {$controllerData.lastUpdated ? $controllerData.lastUpdated.toLocaleString() : 'Never'}
+    Last updated: {controller.lastUpdated ? controller.lastUpdated.toLocaleString() : 'Never'}
   </div>
 </div>

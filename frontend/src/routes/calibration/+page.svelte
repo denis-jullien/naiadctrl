@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { sensorData, fetchSensorData, calibratePH, calibrateORP, calibrateEC } from '$lib/stores';
+  import { sensor, fetchSensorData, calibratePH, calibrateORP, calibrateEC } from '$lib/state.svelte';
   import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
@@ -69,7 +69,7 @@
       <CardHeader>
         <CardTitle>pH Calibration</CardTitle>
         <CardDescription>
-          Current pH reading: <span class="font-medium">{$sensorData.ph ? $sensorData.ph.toFixed(2) : 'N/A'}</span>
+          Current pH reading: <span class="font-medium">{sensor.ph ? sensor.ph.toFixed(2) : 'N/A'}</span>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -111,7 +111,7 @@
       <CardHeader>
         <CardTitle>ORP Calibration</CardTitle>
         <CardDescription>
-          Current ORP reading: <span class="font-medium">{$sensorData.orp ? $sensorData.orp.toFixed(0) : 'N/A'} mV</span>
+          Current ORP reading: <span class="font-medium">{sensor.orp ? sensor.orp.toFixed(0) : 'N/A'} mV</span>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -146,7 +146,7 @@
       <CardHeader>
         <CardTitle>EC Calibration</CardTitle>
         <CardDescription>
-          Current EC reading: <span class="font-medium">{$sensorData.ec ? $sensorData.ec.toFixed(0) : 'N/A'} μS/cm</span>
+          Current EC reading: <span class="font-medium">{sensor.ec ? sensor.ec.toFixed(0) : 'N/A'} μS/cm</span>
         </CardDescription>
       </CardHeader>
       <CardContent>
