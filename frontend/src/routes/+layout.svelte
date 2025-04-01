@@ -1,7 +1,6 @@
 <script>
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import { theme, toggleTheme } from '$lib/stores';
   import "../app.css";
   import { Button } from "$lib/components/ui/button";
   import ModeToggle from "$lib/components/mode-toggle.svelte";

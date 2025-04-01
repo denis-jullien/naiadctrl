@@ -2,10 +2,10 @@
   import { buttonVariants } from "$lib/components/ui/button/index.js";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import { Moon, Sun } from "lucide-svelte";
-  import { theme, toggleTheme } from "$lib/stores";
+  import { theme, toggleTheme } from "$lib/state.svelte";
   
   function setTheme(newTheme) {
-    theme.set(newTheme);
+    theme.color = newTheme;
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
   }
 </script>
