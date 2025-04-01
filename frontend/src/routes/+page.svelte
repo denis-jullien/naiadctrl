@@ -29,6 +29,15 @@
 	// Interval ID for cleanup
 	let intervalId;
 
+	let makeFmt = (suffix) => (u, v, sidx, didx) => {
+		if (didx == null) {
+			let d = u.data[sidx];
+			v = d[d.length - 1];
+		}
+
+		return v == null ? null : v.toFixed(1) + suffix;
+	};
+
 	// Fetch data
 	async function updateData() {
 		await Promise.all([fetchSensorData(), fetchControllerData()]);
@@ -48,20 +57,6 @@
 			clearInterval(intervalId);
 		}
 	});
-
-	let data = [
-		[1, 2, 3, 4, 5],
-		[1, 3, 2, 5, 4]
-	];
-
-	let options = {
-		width: 800,
-		height: 300,
-		scales: { x: { time: false } },
-		series: [{ label: 'x' }, { label: 'y', stroke: 'red' }]
-	};
-
-	let flag = true;
 </script>
 
 <div class="space-y-8">
@@ -145,13 +140,23 @@
 		</Card>
 	</div>
 
-	<div class="grid gap-4 md:grid-cols-2">
+	<div class="grid gap-4 lg:grid-cols-2">
 		<!-- pH Chart -->
 		<Card>
 			<CardHeader>
 				<CardTitle>pH History</CardTitle>
 			</CardHeader>
-			<CardContent></CardContent>
+			<CardContent>
+        <UplotSvelte
+					data={[history.timestamps, history.ph]}
+					options={{
+						width: 700,
+						height: 300,
+						scales: { x: { time: false } },
+						series: [{ label: 'time' }, { label: 'EC', stroke: 'green'}]
+					}}
+				/>
+      </CardContent>
 		</Card>
 
 		<!-- ORP Chart -->
@@ -159,7 +164,17 @@
 			<CardHeader>
 				<CardTitle>ORP History</CardTitle>
 			</CardHeader>
-			<CardContent></CardContent>
+			<CardContent>
+        <UplotSvelte
+					data={[history.timestamps, history.orp]}
+					options={{
+						width: 700,
+						height: 300,
+						scales: { x: { time: false } },
+						series: [{ label: 'time' }, { label: 'EC', stroke: 'red', value: makeFmt('mV')}]
+					}}
+				/>
+      </CardContent>
 		</Card>
 
 		<!-- EC Chart -->
@@ -168,7 +183,15 @@
 				<CardTitle>EC History</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<UplotSvelte data={[history.timestamps, history.ec]} {options} />
+				<UplotSvelte
+					data={[history.timestamps, history.ec]}
+					options={{
+						width: 700,
+						height: 300,
+						scales: { x: { time: false } },
+						series: [{ label: 'time' }, { label: 'EC', stroke: 'red', value: makeFmt('μS/cm')}]
+					}}
+				/>
 			</CardContent>
 		</Card>
 
@@ -179,12 +202,35 @@
 			</CardHeader>
 			<CardContent>
 				<UplotSvelte
-					data={[history.timestamps, history.air_temperature, history.water_temperature]}
+					data={[
+						history.timestamps,
+						history.air_temperature,
+						history.water_temperature,
+						history.humidity
+					]}
 					options={{
-						width: 800,
+						width: 700,
 						height: 300,
 						scales: { x: { time: false } },
-						series: [{ label: 'x' }, { label: 'y', stroke: 'red' }]
+						series: [
+							{ label: 'time' },
+							{ label: 'tAir', stroke: 'red', value: makeFmt('°C'), scale: 'celsius' },
+							{ label: 'tWater', stroke: 'blue', value: makeFmt('°C'), scale: 'celsius' },
+							{ label: 'Humidity', stroke: 'green', value: makeFmt('%'), scale: '%' }
+						],
+						axes: [
+							{},
+							{
+								scale: 'celsius',
+								values: (u, vals, space) => vals.map((v) => +v.toFixed(2) + '°C')
+							},
+							{
+								side: 1,
+								scale: '%',
+								values: (u, vals, space) => vals.map((v) => +v.toFixed(1) + '%'),
+								grid: { show: false }
+							}
+						]
 					}}
 				/>
 			</CardContent>
