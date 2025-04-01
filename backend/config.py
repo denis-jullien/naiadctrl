@@ -27,8 +27,9 @@ class Config:
         return {
             "sensors": {
                 "ph": {
-                    "sck_pin": 17,
-                    "data_pin": 27,
+                    "sck_pin": 11,
+                    "data_read_pin": 18,
+                    "data_write_pin": 13,  # Added separate write pin
                     "calibration": {
                         "voltage_1": 2.5,
                         "ph_1": 7.0,
@@ -37,13 +38,15 @@ class Config:
                     }
                 },
                 "orp": {
-                    "sck_pin": 22,
-                    "data_pin": 23,
+                    "sck_pin": 16,
+                    "data_read_pin": 19,
+                    "data_write_pin": 20,  # Added separate write pin
                     "offset": 0
                 },
                 "ec": {
-                    "sck_pin": 24,
-                    "data_pin": 25,
+                    "sck_pin": 23,
+                    "data_read_pin": 24,
+                    "data_write_pin": 25,   # Added separate write pin
                     "pwm_pin": 18,
                     "k_value": 1.0,
                     "calibration": {
@@ -58,7 +61,7 @@ class Config:
                 }
             },
             "outputs": {
-                "mosfet_pins": [5, 6, 13, 19, 26, 16]
+                "mosfet_pins": [5, 6, 7, 8, 9, 10]
             },
             "controllers": {
                 "ph": {

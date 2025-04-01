@@ -1,0 +1,77 @@
+{
+    "sensors": {
+        "ph": {
+            "sck_pin": 11,
+            "data_read_pin": 18,
+            "data_write_pin": 13,
+            "calibration": {
+                "voltage_1": 0.5,
+                "ph_1": 7.0,
+                "voltage_2": 3.0,
+                "ph_2": 4.0
+            }
+        },
+        "orp": {
+            "sck_pin": 16,
+            "data_read_pin": 19,
+            "data_write_pin": 20,
+            "offset": 0
+        },
+        "ec": {
+            "sck_pin": 23,
+            "data_read_pin": 24,
+            "data_write_pin": 25,
+            "pwm_pin": 18,
+            "k_value": 1.0,
+            "calibration": {
+                "factor": 1.0
+            }
+        },
+        "temperature": {
+            "ds18b20_id": null
+        },
+        "environment": {
+            "i2c_bus": 1
+        }
+    },
+    "outputs": {
+        "mosfet_pins": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+        ]
+    },
+    "controllers": {
+        "ph": {
+            "enabled": true,
+            "target": 6.0,
+            "tolerance": 0.2,
+            "check_interval": 60,
+            "acid_pump_pin": 5,
+            "base_pump_pin": 6
+        },
+        "orp": {
+            "enabled": true,
+            "target": 650,
+            "tolerance": 20,
+            "check_interval": 60,
+            "increase_pump_pin": 13,
+            "decrease_pump_pin": 19
+        },
+        "ec": {
+            "enabled": true,
+            "target": 1500,
+            "tolerance": 100,
+            "check_interval": 60,
+            "nutrient_pump_pin": 26,
+            "water_pump_pin": 16
+        }
+    },
+    "api": {
+        "host": "0.0.0.0",
+        "port": 8000
+    }
+}

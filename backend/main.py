@@ -172,7 +172,8 @@ class HydroponicSystem:
             ph_config = self.config.get('sensors', {}).get('ph', {})
             if ph_config:
                 sck_pin = ph_config.get('sck_pin')
-                data_pin = ph_config.get('data_pin')
+                data_read_pin = ph_config.get('data_read_pin')
+                data_write_pin = ph_config.get('data_write_pin')  # Get write pin
                 
                 # Extract calibration data from the new structure
                 calibration = ph_config.get('calibration', {})
@@ -185,7 +186,8 @@ class HydroponicSystem:
                 else:
                     cal_dict = {}
                 
-                tmp_ph = PHSensor(sck_pin, data_pin, cal_dict)
+                # Create pH sensor with separate read/write pins
+                self.sensors['ph'] = PHSensor(sck_pin, data_read_pin, data_write_pin, cal_dict)
                 print("Initializing pH sensor...")
                 
                 # Add timeout for sensor initialization
@@ -193,7 +195,6 @@ class HydroponicSystem:
                     init_task = asyncio.create_task(self.sensors['ph'].initialize())
                     await asyncio.wait_for(init_task, timeout=2.0)  # 2 second timeout
                     print("Initialized pH sensor")
-                    self.sensors['ph'] = tmp_ph
                 except asyncio.TimeoutError:
                     print("Warning: pH sensor initialization timed out")
                 except Exception as e:
@@ -208,17 +209,18 @@ class HydroponicSystem:
             orp_config = self.config.get('sensors', {}).get('orp', {})
             if orp_config:
                 sck_pin = orp_config.get('sck_pin')
-                data_pin = orp_config.get('data_pin')
+                data_read_pin = orp_config.get('data_read_pin')
+                data_write_pin = orp_config.get('data_write_pin')  # Get write pin
                 offset = orp_config.get('offset', 0)
                 
-                tmp_orp = ORPSensor(sck_pin, data_pin, offset)
+                # Create ORP sensor with separate read/write pins
+                self.sensors['orp'] = ORPSensor(sck_pin, data_read_pin, data_write_pin, offset)
                 print("Initializing ORP sensor...")
                 
                 try:
                     init_task = asyncio.create_task(self.sensors['orp'].initialize())
                     await asyncio.wait_for(init_task, timeout=2.0)  # 2 second timeout
                     print("Initialized ORP sensor")
-                    self.sensors['orp'] = tmp_orp
                 except asyncio.TimeoutError:
                     print("Warning: ORP sensor initialization timed out")
                 except Exception as e:
@@ -232,7 +234,8 @@ class HydroponicSystem:
             ec_config = self.config.get('sensors', {}).get('ec', {})
             if ec_config:
                 sck_pin = ec_config.get('sck_pin')
-                data_pin = ec_config.get('data_pin')
+                data_read_pin = ec_config.get('data_read_pin')
+                data_write_pin = ec_config.get('data_write_pin')  # Get write pin
                 pwm_pin = ec_config.get('pwm_pin')
                 k_value = ec_config.get('k_value', 1.0)
                 
@@ -240,7 +243,10 @@ class HydroponicSystem:
                 calibration = ec_config.get('calibration', {})
                 factor = calibration.get('factor', 1.0)
                 
-                self.sensors['ec'] = ECSensor(sck_pin, data_pin, pwm_pin, k_value=k_value, calibration_factor=factor)
+                # Create EC sensor with separate read/write pins
+                self.sensors['ec'] = ECSensor(sck_pin, data_read_pin, data_write_pin, pwm_pin, k_value)
+                self.sensors['ec'].calibration_factor = factor
+                
                 print("Initializing EC sensor...")
                 
                 try:

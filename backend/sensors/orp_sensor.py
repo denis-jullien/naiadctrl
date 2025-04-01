@@ -5,25 +5,27 @@ class ORPSensor:
     """
     ORP (Oxidation-Reduction Potential) sensor using CS1237 ADC
     """
-    def __init__(self, sck_pin, data_pin, offset=0):
+    def __init__(self, sck_pin, data_read_pin, data_write_pin=None, offset=0):
         """
         Initialize ORP sensor
         
         Args:
             sck_pin: Clock pin for CS1237
-            data_pin: Data pin for CS1237
+            data_read_pin: Data read pin for CS1237
+            data_write_pin: Data write pin for CS1237 (if separate from read pin)
             offset: Calibration offset in mV
         """
-        self.adc = CS1237(sck_pin, data_pin)
+        self.adc = CS1237(sck_pin, data_read_pin, data_write_pin)
         self.offset = offset
         
     async def initialize(self):
         """Initialize the sensor"""
         await self.adc.initialize()
+        self.adc.start()
         
     async def read_voltage(self):
         """Read raw voltage from the sensor"""
-        return await self.adc.read_voltage()
+        return self.adc.get_averaged_data()
         
     async def read_orp(self):
         """

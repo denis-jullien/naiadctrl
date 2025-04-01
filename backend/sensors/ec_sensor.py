@@ -6,18 +6,19 @@ class ECSensor:
     """
     EC (Electrical Conductivity) sensor using CS1237 ADC and PWM
     """
-    def __init__(self, sck_pin, data_pin, pwm_pin, frequency=1000, k_value=1.0):
+    def __init__(self, sck_pin, data_read_pin, data_write_pin=None, pwm_pin=None, frequency=1000, k_value=1.0):
         """
         Initialize EC sensor
         
         Args:
             sck_pin: Clock pin for CS1237
-            data_pin: Data pin for CS1237
+            data_read_pin: Data read pin for CS1237
+            data_write_pin: Data write pin for CS1237 (if separate from read pin)
             pwm_pin: PWM output pin
             frequency: PWM frequency in Hz
             k_value: Cell constant (K value)
         """
-        self.adc = CS1237(sck_pin, data_pin)
+        self.adc = CS1237(sck_pin, data_read_pin, data_write_pin)
         self.pwm_pin = pwm_pin
         self.frequency = frequency
         self.k_value = k_value
@@ -37,6 +38,7 @@ class ECSensor:
     async def initialize(self):
         """Initialize the sensor"""
         await self.adc.initialize()
+        self.adc.start()
         
     async def read_ec(self, duty_cycle=50):
         """
@@ -55,7 +57,7 @@ class ECSensor:
         await asyncio.sleep(0.1)
         
         # Read voltage
-        voltage = await self.adc.read_voltage()
+        voltage = self.adc.get_averaged_data()
         
         # Calculate EC (simplified model)
         # EC = voltage * k_value * calibration_factor
