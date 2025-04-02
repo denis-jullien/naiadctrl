@@ -22,6 +22,9 @@
             "data_read_pin": 24,
             "data_write_pin": 25,
             "pwm_pin": 18,
+            "range_pin": 12,
+            "calibration_pin": 13,
+            "selection_pin": 14,
             "k_value": 1.0,
             "calibration": {
                 "factor": 1.0
@@ -57,21 +60,29 @@
             "enabled": true,
             "target": 650,
             "tolerance": 20,
-            "check_interval": 60,
-            "increase_pump_pin": 13,
-            "decrease_pump_pin": 19
+            "check_interval": 10,
+            "increase_pump_pin": 7,
+            "decrease_pump_pin": 8
         },
         "ec": {
             "enabled": true,
             "target": 1500,
             "tolerance": 100,
             "check_interval": 60,
-            "nutrient_pump_pin": 26,
-            "water_pump_pin": 16
+            "nutrient_pump_pin": 9,
+            "water_pump_pin": 10
         }
     },
     "api": {
         "host": "0.0.0.0",
         "port": 8000
+    },
+    "mqtt": {
+        "enabled": true,
+        "host": "localhost",
+        "port": 1883,
+        "username": null,
+        "password": null,
+        "publish_interval": 10
     }
 }

@@ -23,20 +23,26 @@ from outputs.mosfet_control import MOSFETControl
 # Import API
 from api.fastapi_routes import HydroFastAPI
 
-# Add this import at the top
+# Add this import at the top with other imports
 from history_storage import HistoryStorage
+from mqtt_client import MQTTPublisher
 
 
 # In the HydroponicSystem class, add history_storage initialization
 class HydroponicSystem:
-    def __init__(self):
+    def __init__(self, config_path="config.json"):
         """Initialize the hydroponic system"""
-        self.config = Config()
+        self.config = Config(config_path)
         self.sensors = {}
         self.controllers = {}
         self.outputs = None
         self.api = None
         self.history_storage = None
+        # Initialize tasks list
+        self.tasks = []
+
+        # Add MQTT client
+        self.mqtt_client = None
 
     async def initialize(self):
         """Initialize all components"""
@@ -62,6 +68,9 @@ class HydroponicSystem:
             self.sensors, self.controllers, self.config, self.outputs
         )
         self.api.history_storage = self.history_storage
+
+        # Initialize MQTT client
+        await self._initialize_mqtt()
 
         print("Hydroponic system initialized")
 
@@ -138,6 +147,30 @@ class HydroponicSystem:
 
         print(f"API server started at http://{host}:{port}")
 
+    async def _initialize_mqtt(self):
+        """Initialize MQTT client"""
+        try:
+            mqtt_config = self.config.get("mqtt", {})
+            if mqtt_config and mqtt_config.get("enabled", False):
+                host = mqtt_config.get("host", "localhost")
+                port = mqtt_config.get("port", 1883)
+                username = mqtt_config.get("username")
+                password = mqtt_config.get("password")
+
+                self.mqtt_client = MQTTPublisher(
+                    host=host, port=port, username=username, password=password
+                )
+
+                # Start MQTT publisher task without waiting for connection
+                # It will handle connection attempts internally
+                mqtt_task = asyncio.create_task(self.mqtt_client.run(self))
+                self.tasks.append(mqtt_task)
+                print(f"MQTT client initialized (will connect to {host}:{port})")
+            else:
+                print("MQTT client disabled in configuration")
+        except Exception as e:
+            print(f"Error initializing MQTT client: {e}")
+
     def cleanup(self):
         """Clean up resources"""
         print("Cleaning up resources...")
@@ -162,6 +195,10 @@ class HydroponicSystem:
         # Clean up outputs
         if self.outputs:
             self.outputs.close()
+
+        # Stop MQTT client
+        if self.mqtt_client:
+            self.mqtt_client.stop()
 
         print("Cleanup complete")
 
@@ -244,21 +281,32 @@ class HydroponicSystem:
             if ec_config:
                 sck_pin = ec_config.get("sck_pin")
                 data_read_pin = ec_config.get("data_read_pin")
-                data_write_pin = ec_config.get("data_write_pin")  # Get write pin
+                data_write_pin = ec_config.get("data_write_pin")
                 pwm_pin = ec_config.get("pwm_pin")
+                range_pin = ec_config.get("range_pin")
+                calibration_pin = ec_config.get("calibration_pin")
+                selection_pin = ec_config.get("selection_pin")
                 k_value = ec_config.get("k_value", 1.0)
 
-                # Extract calibration factor if available
+                # Get calibration factor
                 calibration = ec_config.get("calibration", {})
-                factor = calibration.get("factor", 1.0)
+                calibration_factor = calibration.get("factor", 1.0)
 
-                # Create EC sensor with separate read/write pins
+                # Create EC sensor with all required pins
                 self.sensors["ec"] = ECSensor(
-                    sck_pin, data_read_pin, data_write_pin, pwm_pin, k_value
+                    sck_pin,
+                    data_read_pin,
+                    data_write_pin,
+                    pwm_pin,
+                    range_pin,
+                    calibration_pin,
+                    selection_pin,
+                    k_value=k_value,
                 )
-                self.sensors["ec"].calibration_factor = factor
-
                 print("Initializing EC sensor...")
+
+                # Set calibration factor
+                self.sensors["ec"].set_calibration_factor(calibration_factor)
 
                 try:
                     init_task = asyncio.create_task(self.sensors["ec"].initialize())
