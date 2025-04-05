@@ -79,10 +79,10 @@
     },
     "mqtt": {
         "enabled": true,
-        "host": "localhost",
+        "host": "192.168.1.75",
         "port": 1883,
-        "username": null,
-        "password": null,
+        "username": "hydro",
+        "password": "hydro",
         "publish_interval": 10
     }
 }
