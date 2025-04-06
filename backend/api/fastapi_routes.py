@@ -72,6 +72,18 @@ class HydroFastAPI:
                     ].read_measurement()
                     data["air_temperature"] = temp
                     data["humidity"] = humidity
+                
+                # Generic sensors
+                for sensor_id, sensor in self.sensors.items():
+                    if sensor_id not in ["ph", "orp", "ec", "temperature", "environment"]:
+                        if hasattr(sensor, "read_value"):
+                            value = await sensor.read_value()
+                            data[sensor_id] = {
+                                "value": value,
+                                "unit": sensor.unit if hasattr(sensor, "unit") else "",
+                                "name": sensor.name if hasattr(sensor, "name") else sensor_id,
+                                "type": "generic"
+                            }
 
                 return data
 
@@ -100,12 +112,190 @@ class HydroFastAPI:
                     ].read_measurement()
                     value = {"temperature": temp, "humidity": humidity}
                 else:
-                    raise HTTPException(
-                        status_code=400, detail=f"Unknown sensor {sensor_id}"
-                    )
+                    # Handle generic sensors
+                    sensor = self.sensors[sensor_id]
+                    if hasattr(sensor, "read_value"):
+                        value = await sensor.read_value()
+                        return {
+                            "value": value,
+                            "unit": sensor.unit if hasattr(sensor, "unit") else "",
+                            "name": sensor.name if hasattr(sensor, "name") else sensor_id,
+                            "type": "generic",
+                            "timestamp": time.time()
+                        }
+                    else:
+                        raise HTTPException(
+                            status_code=400, detail=f"Unknown sensor type for {sensor_id}"
+                        )
 
                 return {sensor_id: value}
 
+            except Exception as e:
+                if isinstance(e, HTTPException):
+                    raise e
+                raise HTTPException(status_code=500, detail=str(e))
+
+        @self.app.get("/api/sensors/{sensor_id}/raw")
+        async def get_sensor_raw(sensor_id: str):
+            """Get raw reading from a sensor"""
+            try:
+                if sensor_id not in self.sensors:
+                    raise HTTPException(
+                        status_code=404, detail=f"Sensor {sensor_id} not found"
+                    )
+                    
+                sensor = self.sensors[sensor_id]
+                if hasattr(sensor, "read_raw"):
+                    value = await sensor.read_raw()
+                    return {
+                        "success": True,
+                        "value": value,
+                        "timestamp": time.time()
+                    }
+                else:
+                    raise HTTPException(
+                        status_code=400, detail=f"Raw reading not supported for {sensor_id}"
+                    )
+            except Exception as e:
+                if isinstance(e, HTTPException):
+                    raise e
+                raise HTTPException(status_code=500, detail=str(e))
+
+        @self.app.post("/api/sensors/{sensor_id}/calibration")
+        async def set_sensor_calibration(sensor_id: str, calibration: dict):
+            """Set calibration for a sensor"""
+            try:
+                if sensor_id not in self.sensors:
+                    raise HTTPException(
+                        status_code=404, detail=f"Sensor {sensor_id} not found"
+                    )
+                    
+                sensor = self.sensors[sensor_id]
+                
+                # Handle different sensor types
+                if sensor_id == "ph":
+                    # Handle pH calibration
+                    if "voltage_1" in calibration and "ph_1" in calibration and "voltage_2" in calibration and "ph_2" in calibration:
+                        # Update pH sensor calibration
+                        self.sensors["ph"].set_calibration(
+                            {calibration["voltage_1"]: calibration["ph_1"], 
+                             calibration["voltage_2"]: calibration["ph_2"]}
+                        )
+                        
+                        # Update pH calibration in config
+                        ph_config = self.config.get("sensors", {}).get("ph", {})
+                        if not ph_config:
+                            ph_config = {}
+                        if "calibration" not in ph_config:
+                            ph_config["calibration"] = {}
+                        ph_config["calibration"]["voltage_1"] = calibration["voltage_1"]
+                        ph_config["calibration"]["ph_1"] = calibration["ph_1"]
+                        ph_config["calibration"]["voltage_2"] = calibration["voltage_2"]
+                        ph_config["calibration"]["ph_2"] = calibration["ph_2"]
+                        self.config.set("sensors", "ph", ph_config)
+                        
+                        return {"success": True}
+                    else:
+                        raise HTTPException(
+                            status_code=400, detail="Invalid pH calibration data"
+                        )
+                        
+                elif sensor_id == "orp":
+                    # Handle ORP calibration
+                    if "offset" in calibration:
+                        # Update ORP sensor calibration
+                        self.sensors["orp"].set_offset(calibration["offset"])
+                        
+                        # Update ORP calibration in config
+                        orp_config = self.config.get("sensors", {}).get("orp", {})
+                        if not orp_config:
+                            orp_config = {}
+                        orp_config["offset"] = calibration["offset"]
+                        self.config.set("sensors", "orp", orp_config)
+                        
+                        return {"success": True}
+                    else:
+                        raise HTTPException(
+                            status_code=400, detail="Invalid ORP calibration data"
+                        )
+                        
+                elif sensor_id == "ec":
+                    # Handle EC calibration
+                    if "factor" in calibration:
+                        # Update EC sensor calibration
+                        self.sensors["ec"].set_calibration_factor(calibration["factor"])
+                        
+                        # Update EC calibration in config
+                        ec_config = self.config.get("sensors", {}).get("ec", {})
+                        if not ec_config:
+                            ec_config = {}
+                        if "calibration" not in ec_config:
+                            ec_config["calibration"] = {}
+                        ec_config["calibration"]["factor"] = calibration["factor"]
+                        self.config.set("sensors", "ec", ec_config)
+                        
+                        return {"success": True}
+                    else:
+                        raise HTTPException(
+                            status_code=400, detail="Invalid EC calibration data"
+                        )
+                        
+                else:
+                    # Handle generic sensor calibration
+                    if hasattr(sensor, "set_calibration"):
+                        # Convert string keys to int for calibration points
+                        cal_points = {int(k): float(v) for k, v in calibration.items()}
+                        sensor.set_calibration(cal_points)
+                        
+                        # Update generic sensor calibration in config
+                        sensor_config = self.config.get("sensors", {}).get("generic_analog", {}).get(sensor_id, {})
+                        if not sensor_config:
+                            sensor_config = {}
+                        sensor_config["calibration"] = calibration
+                        self.config.set("sensors", "generic_analog", sensor_id, sensor_config)
+                        
+                        return {"success": True}
+                    else:
+                        raise HTTPException(
+                            status_code=400, detail=f"Calibration not supported for {sensor_id}"
+                        )
+                        
+            except Exception as e:
+                if isinstance(e, HTTPException):
+                    raise e
+                raise HTTPException(status_code=500, detail=str(e))
+
+        @self.app.post("/api/sensors/{sensor_id}/unit")
+        async def set_sensor_unit(sensor_id: str, data: dict):
+            """Set unit for a sensor"""
+            try:
+                if sensor_id not in self.sensors:
+                    raise HTTPException(
+                        status_code=404, detail=f"Sensor {sensor_id} not found"
+                    )
+                    
+                if "unit" not in data:
+                    raise HTTPException(
+                        status_code=400, detail="Unit value is required"
+                    )
+                    
+                sensor = self.sensors[sensor_id]
+                if hasattr(sensor, "set_unit"):
+                    sensor.set_unit(data["unit"])
+                    
+                    # Update unit in config
+                    sensor_config = self.config.get("sensors", {}).get("generic_analog", {}).get(sensor_id, {})
+                    if not sensor_config:
+                        sensor_config = {}
+                    sensor_config["unit"] = data["unit"]
+                    self.config.set("sensors", "generic_analog", sensor_id, sensor_config)
+                    
+                    return {"success": True}
+                else:
+                    raise HTTPException(
+                        status_code=400, detail=f"Setting unit not supported for {sensor_id}"
+                    )
+                    
             except Exception as e:
                 if isinstance(e, HTTPException):
                     raise e
@@ -502,59 +692,6 @@ class HydroFastAPI:
                     raise e
                 raise HTTPException(status_code=500, detail=str(e))
 
-        # Add these endpoints to your FastAPI routes
-        
-        @self.app.get("/api/sensors/generic/{sensor_id}")
-        async def get_generic_sensor_reading(sensor_id: str):
-            """Get reading from a generic analog sensor"""
-            try:
-                if sensor_id in self.sensors:
-                    sensor = self.sensors[sensor_id]
-                    if hasattr(sensor, "read_value"):
-                        value = await sensor.read_value()
-                        return {
-                            "success": True,
-                            "value": value,
-                            "unit": sensor.unit,
-                            "name": sensor.name,
-                            "timestamp": time.time()
-                        }
-                    return {"success": False, "error": "Not a generic analog sensor"}
-                return {"success": False, "error": "Sensor not found"}
-            except Exception as e:
-                return {"success": False, "error": str(e)}
-        
-        @self.app.post("/api/sensors/generic/{sensor_id}/calibration")
-        async def set_generic_sensor_calibration(sensor_id: str, calibration: dict):
-            """Set calibration for a generic analog sensor"""
-            try:
-                if sensor_id in self.sensors:
-                    sensor = self.sensors[sensor_id]
-                    if hasattr(sensor, "set_calibration"):
-                        # Convert string keys to int for calibration points
-                        cal_points = {int(k): float(v) for k, v in calibration.items()}
-                        sensor.set_calibration(cal_points)
-                        return {"success": True}
-                    return {"success": False, "error": "Not a generic analog sensor"}
-                return {"success": False, "error": "Sensor not found"}
-            except Exception as e:
-                return {"success": False, "error": str(e)}
-        
-        @self.app.post("/api/sensors/generic/{sensor_id}/unit")
-        async def set_generic_sensor_unit(sensor_id: str, data: dict):
-            """Set unit for a generic analog sensor"""
-            try:
-                if sensor_id in self.sensors and "unit" in data:
-                    sensor = self.sensors[sensor_id]
-                    if hasattr(sensor, "set_unit"):
-                        sensor.set_unit(data["unit"])
-                        return {"success": True}
-                    return {"success": False, "error": "Not a generic analog sensor"}
-                return {"success": False, "error": "Sensor not found or invalid data"}
-            except Exception as e:
-                return {"success": False, "error": str(e)}
-
-        # Add this endpoint to your FastAPI routes
         
         @self.app.post("/api/controllers/pump_timer/force_run")
         async def force_pump_run():
