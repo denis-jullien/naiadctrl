@@ -502,6 +502,58 @@ class HydroFastAPI:
                     raise e
                 raise HTTPException(status_code=500, detail=str(e))
 
+        # Add these endpoints to your FastAPI routes
+        
+        @self.app.get("/api/sensors/generic/{sensor_id}")
+        async def get_generic_sensor_reading(sensor_id: str):
+            """Get reading from a generic analog sensor"""
+            try:
+                if sensor_id in self.sensors:
+                    sensor = self.sensors[sensor_id]
+                    if hasattr(sensor, "read_value"):
+                        value = await sensor.read_value()
+                        return {
+                            "success": True,
+                            "value": value,
+                            "unit": sensor.unit,
+                            "name": sensor.name,
+                            "timestamp": time.time()
+                        }
+                    return {"success": False, "error": "Not a generic analog sensor"}
+                return {"success": False, "error": "Sensor not found"}
+            except Exception as e:
+                return {"success": False, "error": str(e)}
+        
+        @self.app.post("/api/sensors/generic/{sensor_id}/calibration")
+        async def set_generic_sensor_calibration(sensor_id: str, calibration: dict):
+            """Set calibration for a generic analog sensor"""
+            try:
+                if sensor_id in self.sensors:
+                    sensor = self.sensors[sensor_id]
+                    if hasattr(sensor, "set_calibration"):
+                        # Convert string keys to int for calibration points
+                        cal_points = {int(k): float(v) for k, v in calibration.items()}
+                        sensor.set_calibration(cal_points)
+                        return {"success": True}
+                    return {"success": False, "error": "Not a generic analog sensor"}
+                return {"success": False, "error": "Sensor not found"}
+            except Exception as e:
+                return {"success": False, "error": str(e)}
+        
+        @self.app.post("/api/sensors/generic/{sensor_id}/unit")
+        async def set_generic_sensor_unit(sensor_id: str, data: dict):
+            """Set unit for a generic analog sensor"""
+            try:
+                if sensor_id in self.sensors and "unit" in data:
+                    sensor = self.sensors[sensor_id]
+                    if hasattr(sensor, "set_unit"):
+                        sensor.set_unit(data["unit"])
+                        return {"success": True}
+                    return {"success": False, "error": "Not a generic analog sensor"}
+                return {"success": False, "error": "Sensor not found or invalid data"}
+            except Exception as e:
+                return {"success": False, "error": str(e)}
+
         # Add this endpoint to your FastAPI routes
         
         @self.app.post("/api/controllers/pump_timer/force_run")

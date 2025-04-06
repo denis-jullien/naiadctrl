@@ -11,6 +11,7 @@ from sensors.orp_sensor import ORPSensor
 from sensors.ec_sensor import ECSensor
 from sensors.ds18b20 import DS18B20
 from sensors.sht41 import SHT41
+from sensors.generic_analog_sensor import GenericAnalogSensor
 
 # Import controllers
 from controllers.ph_controller import PHController
@@ -403,6 +404,55 @@ class HydroponicSystem:
                     self.sensors["environment"].initialized = False
         except Exception as e:
             self.logger.error(f"Error setting up environment sensor: {e}")
+
+        # Generic analog sensors
+        try:
+            generic_sensors_config = self.config.get("sensors", {}).get("generic_analog", {})
+            for sensor_id, sensor_config in generic_sensors_config.items():
+                if not sensor_config.get("enabled", True):
+                    continue
+                    
+                sck_pin = sensor_config.get("sck_pin")
+                data_read_pin = sensor_config.get("data_read_pin")
+                data_write_pin = sensor_config.get("data_write_pin")
+                name = sensor_config.get("name", sensor_id)
+                unit = sensor_config.get("unit", "")
+                
+                # Get PGA and speed settings if provided
+                pga_setting = sensor_config.get("pga", 0)  # Default to PGA_1
+                speed_setting = sensor_config.get("speed", 0)  # Default to 10Hz
+                
+                # Create the sensor
+                self.sensors[sensor_id] = GenericAnalogSensor(
+                    sck_pin=sck_pin, 
+                    data_read_pin=data_read_pin, 
+                    data_write_pin=data_write_pin,
+                    name=name, 
+                    unit=unit,
+                    pga=pga_setting,
+                    speed=speed_setting
+                )
+                
+                # Set up calibration if provided
+                calibration = sensor_config.get("calibration", {})
+                if calibration:
+                    # Convert string keys to int for calibration points
+                    cal_points = {int(k): float(v) for k, v in calibration.items()}
+                    self.sensors[sensor_id].set_calibration(cal_points)
+                
+                self.logger.info(f"Initializing generic analog sensor: {name}")
+                
+                try:
+                    init_success = await self.sensors[sensor_id].initialize()
+                    if init_success:
+                        self.logger.info(f"Initialized generic analog sensor: {name}")
+                    else:
+                        self.logger.error(f"Failed to initialize generic analog sensor: {name}")
+                except Exception as e:
+                    self.logger.error(f"Error initializing {name} sensor: {e}")
+                    
+        except Exception as e:
+            self.logger.error(f"Error setting up generic analog sensors: {e}")
 
     def _initialize_controllers(self):
         """Initialize all controllers"""

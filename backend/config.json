@@ -35,6 +35,36 @@
         },
         "environment": {
             "i2c_bus": 1
+        },
+        "generic_analog": {
+            "water_level": {
+                "enabled": false,
+                "sck_pin": 17,
+                "data_read_pin": 27,
+                "data_write_pin": 22,
+                "name": "Water Level",
+                "unit": "cm",
+                "pga": 0,
+                "speed": 0,
+                "calibration": {
+                    "-8388607": 0,
+                    "0": 50,
+                    "8388607": 100
+                }
+            },
+            "pressure": {
+                "enabled": true,
+                "sck_pin": 23,
+                "data_read_pin": 24,
+                "data_write_pin": 25,
+                "name": "Pressure",
+                "unit": "PSI",
+                "calibration": {
+                    "-8388607": 0,
+                    "0": 25,
+                    "8388607": 50
+                }
+            }
         }
     },
     "outputs": {
