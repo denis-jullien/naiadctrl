@@ -12,7 +12,8 @@
 		{ href: '/outputs', label: 'Outputs' },
 		{ href: '/controllers', label: 'Controllers' },
 		{ href: '/calibration', label: 'Calibration' },
-		{ href: '/settings', label: 'Settings' }
+		{ href: '/settings', label: 'Settings' },
+		{ href: '/logs', label: 'Logs' }
 	];
 </script>
 
@@ -52,6 +53,7 @@
 			</header>
 
 			<div class="p-6">
+				
 				<slot />
 			</div>
 		</main>

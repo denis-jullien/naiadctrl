@@ -29,8 +29,29 @@ from history_storage import HistoryStorage
 from mqtt_client import MQTTPublisher
 
 
-# In the HydroponicSystem class, add history_storage initialization
+
+# Add these imports at the top
+import logging
+from log_handler import MemoryLogHandler
+
 class HydroponicSystem:
+    # Add this after the class definition but before the initialize method
+    # Create a memory log handler
+    log_handler = MemoryLogHandler(capacity=1000)
+
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(),  # Console output
+            log_handler  # Memory storage
+        ]
+    )
+
+    # Get a logger for this module
+    logger = logging.getLogger(__name__)
+
     def __init__(self, config_path="config.json"):
         """Initialize the hydroponic system"""
         self.config = Config(config_path)
@@ -44,6 +65,9 @@ class HydroponicSystem:
 
         # Add MQTT client
         self.mqtt_client = None
+
+        # In the __init__ method, add this line after self.mqtt_client = None
+        # self.log_handler = memory_log_handler
 
     async def initialize(self):
         """Initialize all components"""
@@ -62,18 +86,18 @@ class HydroponicSystem:
 
         # Initialize history storage
         self.history_storage = HistoryStorage(self.config)
-        print("Initialized history storage")
+        self.logger.info("Initialized history storage")
 
         # Initialize API
         self.api = HydroFastAPI(
-            self.sensors, self.controllers, self.config, self.outputs
+            self.sensors, self.controllers, self.config, self.outputs, self.log_handler
         )
         self.api.history_storage = self.history_storage
 
         # Initialize MQTT client
         await self._initialize_mqtt()
 
-        print("Hydroponic system initialized")
+        self.logger.info("Hydroponic system initialized")
 
     # Add a method to update history with sensor data
     async def update_history(self):
@@ -113,13 +137,13 @@ class HydroponicSystem:
 
     async def start(self):
         """Start the hydroponic system"""
-        print("Starting hydroponic system...")
+        self.logger.info("Starting hydroponic system...")
 
         # Start controllers
         for controller_id, controller in self.controllers.items():
             if not controller.running:
                 asyncio.create_task(controller.run())
-                print(f"Started {controller_id} controller")
+                self.logger.info(f"Started {controller_id} controller")
 
         # Start history update task
         history_update_interval = self.config.get("history", {}).get(
@@ -132,7 +156,7 @@ class HydroponicSystem:
                 await asyncio.sleep(history_update_interval)
 
         asyncio.create_task(history_update_task())
-        print(f"Started history update task (interval: {history_update_interval}s)")
+        self.logger.info(f"Started history update task (interval: {history_update_interval}s)")
 
         # Start API server
         api_config = self.config.get("api", {})
@@ -146,7 +170,7 @@ class HydroponicSystem:
         server = uvicorn.Server(config)
         await server.serve()
 
-        print(f"API server started at http://{host}:{port}")
+        self.logger.info(f"API server started at http://{host}:{port}")
 
     async def _initialize_mqtt(self):
         """Initialize MQTT client"""
@@ -166,15 +190,15 @@ class HydroponicSystem:
                 # It will handle connection attempts internally
                 mqtt_task = asyncio.create_task(self.mqtt_client.run(self))
                 self.tasks.append(mqtt_task)
-                print(f"MQTT client initialized (will connect to {host}:{port})")
+                self.logger.info(f"MQTT client initialized (will connect to {host}:{port})")
             else:
-                print("MQTT client disabled in configuration")
+                self.logger.warning("MQTT client disabled in configuration")
         except Exception as e:
-            print(f"Error initializing MQTT client: {e}")
+            self.logger.error(f"Error initializing MQTT client: {e}")
 
     def cleanup(self):
         """Clean up resources"""
-        print("Cleaning up resources...")
+        self.logger.info("Cleaning up resources...")
 
         # Save history data
         if self.history_storage:
@@ -191,7 +215,7 @@ class HydroponicSystem:
                 try:
                     sensor.close()
                 except Exception as e:
-                    print(f"Error closing {sensor_id} sensor: {e}")
+                    self.logger.error(f"Error closing {sensor_id} sensor: {e}")
 
         # Clean up outputs
         if self.outputs:
@@ -201,7 +225,7 @@ class HydroponicSystem:
         if self.mqtt_client:
             self.mqtt_client.stop()
 
-        print("Cleanup complete")
+        self.logger.info("Cleanup complete")
 
     async def _initialize_sensors(self):
         """Initialize all sensors"""
@@ -233,21 +257,21 @@ class HydroponicSystem:
                 self.sensors["ph"] = PHSensor(
                     sck_pin, data_read_pin, data_write_pin, cal_dict
                 )
-                print("Initializing pH sensor...")
+                self.logger.info("Initializing pH sensor...")
 
                 # Add timeout for sensor initialization
                 try:
                     init_task = asyncio.create_task(self.sensors["ph"].initialize())
                     await asyncio.wait_for(init_task, timeout=2.0)  # 2 second timeout
-                    print("Initialized pH sensor")
+                    self.logger.info("Initialized pH sensor")
                 except asyncio.TimeoutError:
-                    print("Warning: pH sensor initialization timed out")
+                    self.logger.error("Warning: pH sensor initialization timed out")
                 except Exception as e:
-                    print(f"Error initializing pH sensor: {e}")
+                    self.logger.error(f"Error initializing pH sensor: {e}")
                     # Keep the sensor in the dictionary but mark it as not initialized
                     self.sensors["ph"].initialized = False
         except Exception as e:
-            print(f"Error setting up pH sensor: {e}")
+            self.logger.error(f"Error setting up pH sensor: {e}")
 
         # ORP sensor
         try:
@@ -262,19 +286,19 @@ class HydroponicSystem:
                 self.sensors["orp"] = ORPSensor(
                     sck_pin, data_read_pin, data_write_pin, offset
                 )
-                print("Initializing ORP sensor...")
+                self.logger.info("Initializing ORP sensor...")
 
                 try:
                     init_task = asyncio.create_task(self.sensors["orp"].initialize())
                     await asyncio.wait_for(init_task, timeout=2.0)  # 2 second timeout
-                    print("Initialized ORP sensor")
+                    self.logger.info("Initialized ORP sensor")
                 except asyncio.TimeoutError:
-                    print("Warning: ORP sensor initialization timed out")
+                    self.logger.error("Warning: ORP sensor initialization timed out")
                 except Exception as e:
-                    print(f"Error initializing ORP sensor: {e}")
+                    self.logger.error(f"Error initializing ORP sensor: {e}")
                     self.sensors["orp"].initialized = False
         except Exception as e:
-            print(f"Error setting up ORP sensor: {e}")
+            self.logger.error(f"Error setting up ORP sensor: {e}")
 
         # EC sensor
         try:
@@ -304,7 +328,7 @@ class HydroponicSystem:
                     selection_pin,
                     k_value=k_value,
                 )
-                print("Initializing EC sensor...")
+                self.logger.info("Initializing EC sensor...")
 
                 # Set calibration factor
                 self.sensors["ec"].set_calibration_factor(calibration_factor)
@@ -312,14 +336,14 @@ class HydroponicSystem:
                 try:
                     init_task = asyncio.create_task(self.sensors["ec"].initialize())
                     await asyncio.wait_for(init_task, timeout=2.0)  # 2 second timeout
-                    print("Initialized EC sensor")
+                    self.logger.info("Initialized EC sensor")
                 except asyncio.TimeoutError:
-                    print("Warning: EC sensor initialization timed out")
+                    self.logger.error("Warning: EC sensor initialization timed out")
                 except Exception as e:
-                    print(f"Error initializing EC sensor: {e}")
+                    self.logger.error(f"Error initializing EC sensor: {e}")
                     self.sensors["ec"].initialized = False
         except Exception as e:
-            print(f"Error setting up EC sensor: {e}")
+            self.logger.error(f"Error setting up EC sensor: {e}")
 
         # Temperature sensor
         try:
@@ -328,14 +352,14 @@ class HydroponicSystem:
                 sensor_id = temp_config.get("ds18b20_id")
 
                 self.sensors["temperature"] = DS18B20(sensor_id)
-                print("Initializing temperature sensor...")
+                self.logger.info("Initializing temperature sensor...")
 
                 try:
                     init_task = asyncio.create_task(
                         self.sensors["temperature"].initialize()
                     )
                     await asyncio.wait_for(init_task, timeout=2.0)  # 2 second timeout
-                    print("Initialized temperature sensor")
+                    self.logger.info("Initialized temperature sensor")
 
                     # Set temperature for EC sensor
                     if (
@@ -348,14 +372,14 @@ class HydroponicSystem:
                             if temp is not None:
                                 self.sensors["ec"].set_temperature(temp)
                         except Exception as e:
-                            print(f"Error reading temperature for EC sensor: {e}")
+                            self.logger.warning(f"Error reading temperature for EC sensor: {e}")
                 except asyncio.TimeoutError:
-                    print("Warning: Temperature sensor initialization timed out")
+                    self.logger.error("Warning: Temperature sensor initialization timed out")
                 except Exception as e:
-                    print(f"Error initializing temperature sensor: {e}")
+                    self.logger.error(f"Error initializing temperature sensor: {e}")
                     self.sensors["temperature"].initialized = False
         except Exception as e:
-            print(f"Error setting up temperature sensor: {e}")
+            self.logger.error(f"Error setting up temperature sensor: {e}")
 
         # Environment sensor
         try:
@@ -364,21 +388,21 @@ class HydroponicSystem:
                 i2c_bus = env_config.get("i2c_bus", 1)
 
                 self.sensors["environment"] = SHT41(i2c_bus)
-                print("Initializing environment sensor...")
+                self.logger.info("Initializing environment sensor...")
 
                 try:
                     init_task = asyncio.create_task(
                         self.sensors["environment"].initialize()
                     )
                     await asyncio.wait_for(init_task, timeout=2.0)  # 2 second timeout
-                    print("Initialized environment sensor")
+                    self.logger.info("Initialized environment sensor")
                 except asyncio.TimeoutError:
-                    print("Warning: Environment sensor initialization timed out")
+                    self.logger.error("Warning: Environment sensor initialization timed out")
                 except Exception as e:
-                    print(f"Error initializing environment sensor: {e}")
+                    self.logger.error(f"Error initializing environment sensor: {e}")
                     self.sensors["environment"].initialized = False
         except Exception as e:
-            print(f"Error setting up environment sensor: {e}")
+            self.logger.error(f"Error setting up environment sensor: {e}")
 
     def _initialize_controllers(self):
         """Initialize all controllers"""
@@ -400,7 +424,7 @@ class HydroponicSystem:
                 tolerance=tolerance,
                 check_interval=check_interval,
             )
-            print("Initialized pH controller")
+            self.logger.info("Initialized pH controller")
 
         # ORP controller
         orp_config = self.config.get("controllers", {}).get("orp", {})
@@ -420,7 +444,7 @@ class HydroponicSystem:
                 tolerance=tolerance,
                 check_interval=check_interval,
             )
-            print("Initialized ORP controller")
+            self.logger.info("Initialized ORP controller")
 
         # EC controller
         ec_config = self.config.get("controllers", {}).get("ec", {})
@@ -440,7 +464,7 @@ class HydroponicSystem:
                 tolerance=tolerance,
                 check_interval=check_interval,
             )
-            print("Initialized EC controller")
+            self.logger.info("Initialized EC controller")
 
         # Add pump timer controller initialization
         try:
@@ -472,11 +496,11 @@ class HydroponicSystem:
                         start_hour=start_hour,
                         end_hour=end_hour
                     )
-                    print("Initialized pump timer controller")
+                    self.logger.info("Initialized pump timer controller")
                 else:
-                    print("Cannot initialize pump timer controller: temperature sensor not found")
+                    self.logger.warning("Cannot initialize pump timer controller: temperature sensor not found")
         except Exception as e:
-            print(f"Error initializing pump timer controller: {e}")
+            self.logger.error(f"Error initializing pump timer controller: {e}")
 
 async def main():
     """Main entry point"""

@@ -2,12 +2,15 @@ import asyncio
 import json
 from aiomqtt import Client, MqttError
 import time
-
+import logging
 
 class MQTTPublisher:
     """
     MQTT client for publishing hydroponic system data
     """
+
+    # Get a logger for this module
+    logger = logging.getLogger(__name__)
 
     def __init__(
         self, host="localhost", port=1883, client_id=None, username=None, password=None
@@ -49,14 +52,14 @@ class MQTTPublisher:
             )
             await self.client.__aenter__()
             self.connected = True
-            print(f"Connected to MQTT broker at {self.host}:{self.port}")
+            self.logger.info(f"Connected to MQTT broker at {self.host}:{self.port}")
             return True
         except MqttError as e:
-            print(f"Failed to connect to MQTT broker: {e}")
+            self.logger.warning(f"Failed to connect to MQTT broker: {e}")
             self.connected = False
             return False
         except Exception as e:
-            print(f"Unexpected error connecting to MQTT broker: {e}")
+            self.logger.error(f"Unexpected error connecting to MQTT broker: {e}")
             self.connected = False
             return False
 
@@ -65,9 +68,9 @@ class MQTTPublisher:
         if self.client:
             try:
                 await self.client.__aexit__(None, None, None)
-                print("Disconnected from MQTT broker")
+                self.logger.warning("Disconnected from MQTT broker")
             except Exception as e:
-                print(f"Error disconnecting from MQTT broker: {e}")
+                self.logger.error(f"Error disconnecting from MQTT broker: {e}")
         self.connected = False
 
     async def publish_message(self, topic, payload):
@@ -79,7 +82,7 @@ class MQTTPublisher:
             payload: Message payload (will be converted to JSON)
         """
         if not self.connected or not self.client:
-            print("Not connected to MQTT broker")
+            self.logger.warning("Not connected to MQTT broker")
             return False
 
         full_topic = f"{self.base_topic}/{topic}"
@@ -92,7 +95,7 @@ class MQTTPublisher:
             await self.client.publish(full_topic, payload)
             return True
         except Exception as e:
-            print(f"Error publishing to {full_topic}: {e}")
+            self.logger.error(f"Error publishing to {full_topic}: {e}")
             self.connected = False  # Mark as disconnected to trigger reconnect
             return False
 
@@ -112,7 +115,7 @@ class MQTTPublisher:
                 if ph is not None:
                     sensor_data["ph"] = round(ph, 2)
             except Exception as e:
-                print(f"Error reading pH: {e}")
+                self.logger.error(f"Error reading pH: {e}")
 
         # ORP sensor
         if "orp" in sensors:
@@ -121,7 +124,7 @@ class MQTTPublisher:
                 if orp is not None:
                     sensor_data["orp"] = round(orp, 1)
             except Exception as e:
-                print(f"Error reading ORP: {e}")
+                self.logger.error(f"Error reading ORP: {e}")
 
         # EC sensor
         if "ec" in sensors:
@@ -130,7 +133,7 @@ class MQTTPublisher:
                 if ec is not None:
                     sensor_data["ec"] = round(ec, 1)
             except Exception as e:
-                print(f"Error reading EC: {e}")
+                self.logger.error(f"Error reading EC: {e}")
 
         # Temperature sensor
         if "temperature" in sensors:
@@ -139,7 +142,7 @@ class MQTTPublisher:
                 if temp is not None:
                     sensor_data["water_temperature"] = round(temp, 1)
             except Exception as e:
-                print(f"Error reading water temperature: {e}")
+                self.logger.error(f"Error reading water temperature: {e}")
 
         # Environment sensor
         if "environment" in sensors:
@@ -150,7 +153,7 @@ class MQTTPublisher:
                 if humidity is not None:
                     sensor_data["humidity"] = round(humidity, 1)
             except Exception as e:
-                print(f"Error reading environment data: {e}")
+                self.logger.error(f"Error reading environment data: {e}")
 
         # Publish sensor data if we have any
         if sensor_data:
@@ -170,7 +173,7 @@ class MQTTPublisher:
                 status = controller.get_status()
                 controller_data[controller_id] = status
             except Exception as e:
-                print(f"Error getting status for {controller_id} controller: {e}")
+                self.logger.error(f"Error getting status for {controller_id} controller: {e}")
 
         # Publish controller data if we have any
         if controller_data:
@@ -187,7 +190,7 @@ class MQTTPublisher:
             output_states = outputs.get_all_states()
             await self.publish_message("outputs", output_states)
         except Exception as e:
-            print(f"Error publishing output status: {e}")
+            self.logger.error(f"Error publishing output status: {e}")
 
     async def run(self, system):
         """
@@ -205,7 +208,7 @@ class MQTTPublisher:
                     connected = await self.connect()
                     if not connected:
                         # If connection failed, wait before retrying
-                        print(
+                        self.logger.info(
                             f"Will retry connecting to MQTT broker in {self.reconnect_interval} seconds"
                         )
                         await asyncio.sleep(self.reconnect_interval)
@@ -221,13 +224,13 @@ class MQTTPublisher:
                 await self.publish_output_status(system.outputs)
 
             except MqttError as e:
-                print(f"MQTT error: {e}")
+                self.logger.error(f"MQTT error: {e}")
                 self.connected = False
                 # Don't wait the full interval on connection error
                 await asyncio.sleep(self.reconnect_interval)
                 continue
             except Exception as e:
-                print(f"Error in MQTT publisher loop: {e}")
+                self.logger.error(f"Error in MQTT publisher loop: {e}")
                 # Try to reconnect on next iteration
                 self.connected = False
 

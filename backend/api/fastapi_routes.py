@@ -10,7 +10,7 @@ class HydroFastAPI:
     FastAPI implementation for the hydroponic system
     """
 
-    def __init__(self, sensors, controllers, config, outputs):
+    def __init__(self, sensors, controllers, config, outputs, log_handler):
         """
         Initialize API
 
@@ -24,6 +24,7 @@ class HydroFastAPI:
         self.controllers = controllers
         self.config = config
         self.outputs = outputs
+        self.log_handler = log_handler
 
         # Setup CORS
         self.app.add_middleware(
@@ -513,3 +514,15 @@ class HydroFastAPI:
                 return {"success": False, "error": "Pump timer controller not found"}
             except Exception as e:
                 return {"success": False, "error": str(e)}
+
+        # Add this endpoint
+        @self.app.get("/api/logs")
+        async def get_logs(limit: int = 100, level: str = None):
+            """Get system logs"""
+            try:
+                if hasattr(self, 'log_handler'):
+                    logs = self.log_handler.get_logs(limit=limit, level=level)
+                    return {"logs": logs}  
+                return {"logs": [], "error": "Log handler not initialized"}
+            except Exception as e:
+                return {"logs": [], "error": str(e)}
