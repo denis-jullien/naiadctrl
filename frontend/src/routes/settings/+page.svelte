@@ -294,7 +294,7 @@
 										/>
 									</div>
 								</div>
-								
+
 								<div class="mt-4">
 									<Label>Temperature Thresholds</Label>
 									<div class="mt-2 grid grid-cols-2 gap-4">
@@ -309,7 +309,9 @@
 														const newTemp = parseInt(e.target.value);
 														const oldTemp = parseInt(temp);
 														if (!isNaN(newTemp) && newTemp > 0) {
-															const newThresholds = { ...localConfig.controllers.pump_timer.temp_thresholds };
+															const newThresholds = {
+																...localConfig.controllers.pump_timer.temp_thresholds
+															};
 															delete newThresholds[oldTemp];
 															newThresholds[newTemp] = duration;
 															localConfig.controllers.pump_timer.temp_thresholds = newThresholds;
@@ -326,34 +328,41 @@
 													on:input={(e) => {
 														const newDuration = parseInt(e.target.value);
 														if (!isNaN(newDuration) && newDuration > 0) {
-															localConfig.controllers.pump_timer.temp_thresholds[temp] = newDuration;
+															localConfig.controllers.pump_timer.temp_thresholds[temp] =
+																newDuration;
 														}
 													}}
 												/>
 											</div>
 										{/each}
 									</div>
-									
+
 									<div class="mt-2 flex justify-between">
 										<Button
 											variant="outline"
 											size="sm"
 											on:click={() => {
-												const newThresholds = { ...localConfig.controllers.pump_timer.temp_thresholds };
+												const newThresholds = {
+													...localConfig.controllers.pump_timer.temp_thresholds
+												};
 												newThresholds[20] = 30; // Default new threshold
 												localConfig.controllers.pump_timer.temp_thresholds = newThresholds;
 											}}
 										>
 											Add Threshold
 										</Button>
-										
+
 										<Button
 											variant="destructive"
 											size="sm"
 											on:click={() => {
-												const entries = Object.entries(localConfig.controllers.pump_timer.temp_thresholds || {});
+												const entries = Object.entries(
+													localConfig.controllers.pump_timer.temp_thresholds || {}
+												);
 												if (entries.length > 0) {
-													const newThresholds = { ...localConfig.controllers.pump_timer.temp_thresholds };
+													const newThresholds = {
+														...localConfig.controllers.pump_timer.temp_thresholds
+													};
 													delete newThresholds[entries[entries.length - 1][0]];
 													localConfig.controllers.pump_timer.temp_thresholds = newThresholds;
 												}
@@ -384,7 +393,7 @@
 										/>
 									</div>
 								</div>
-								
+
 								<div class="mt-4">
 									<Label>Temperature Thresholds</Label>
 									<div class="mt-2 grid grid-cols-2 gap-4">
@@ -399,7 +408,9 @@
 														const newTemp = parseInt(e.target.value);
 														const oldTemp = parseInt(temp);
 														if (!isNaN(newTemp) && newTemp > 0) {
-															const newThresholds = { ...localConfig.controllers.pump_timer.temp_thresholds };
+															const newThresholds = {
+																...localConfig.controllers.pump_timer.temp_thresholds
+															};
 															delete newThresholds[oldTemp];
 															newThresholds[newTemp] = duration;
 															localConfig.controllers.pump_timer.temp_thresholds = newThresholds;
@@ -416,34 +427,41 @@
 													on:input={(e) => {
 														const newDuration = parseInt(e.target.value);
 														if (!isNaN(newDuration) && newDuration > 0) {
-															localConfig.controllers.pump_timer.temp_thresholds[temp] = newDuration;
+															localConfig.controllers.pump_timer.temp_thresholds[temp] =
+																newDuration;
 														}
 													}}
 												/>
 											</div>
 										{/each}
 									</div>
-									
+
 									<div class="mt-2 flex justify-between">
 										<Button
 											variant="outline"
 											size="sm"
 											on:click={() => {
-												const newThresholds = { ...localConfig.controllers.pump_timer.temp_thresholds };
+												const newThresholds = {
+													...localConfig.controllers.pump_timer.temp_thresholds
+												};
 												newThresholds[20] = 30; // Default new threshold
 												localConfig.controllers.pump_timer.temp_thresholds = newThresholds;
 											}}
 										>
 											Add Threshold
 										</Button>
-										
+
 										<Button
 											variant="destructive"
 											size="sm"
 											on:click={() => {
-												const entries = Object.entries(localConfig.controllers.pump_timer.temp_thresholds || {});
+												const entries = Object.entries(
+													localConfig.controllers.pump_timer.temp_thresholds || {}
+												);
 												if (entries.length > 0) {
-													const newThresholds = { ...localConfig.controllers.pump_timer.temp_thresholds };
+													const newThresholds = {
+														...localConfig.controllers.pump_timer.temp_thresholds
+													};
 													delete newThresholds[entries[entries.length - 1][0]];
 													localConfig.controllers.pump_timer.temp_thresholds = newThresholds;
 												}

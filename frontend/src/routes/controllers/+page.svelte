@@ -103,9 +103,8 @@
 		}
 	});
 
-
 	// ... existing imports and variables ...
-	
+
 	// Add new form values for pump timer
 	let pumpMinRunTime = 15;
 	let pumpMaxRunTime = 120;
@@ -113,7 +112,7 @@
 	let pumpStartHour = 8;
 	let pumpEndHour = 20;
 	let pumpTempThresholds = {};
-	
+
 	// Handle pump timer controller form submission
 	async function handlePumpTimerSubmit() {
 		try {
@@ -131,9 +130,9 @@
 					temp_thresholds: pumpTempThresholds
 				})
 			});
-	
+
 			const result = await response.json();
-	
+
 			if (result.success) {
 				await fetchControllerData();
 			}
@@ -141,7 +140,7 @@
 			console.error('Error updating pump timer controller:', error);
 		}
 	}
-	
+
 	// Toggle pump timer controller
 	async function togglePumpTimerController() {
 		if (controller.pump_timer?.running) {
@@ -150,7 +149,7 @@
 			await startController('pump_timer');
 		}
 	}
-	
+
 	// Initialize form values when controller data is loaded
 	$: if (controller.pump_timer) {
 		pumpMinRunTime = controller.pump_timer.min_run_time || 15;
@@ -160,7 +159,6 @@
 		pumpEndHour = controller.pump_timer.end_hour || 20;
 		pumpTempThresholds = controller.pump_timer.temp_thresholds || {};
 	}
-
 </script>
 
 <div class="space-y-6">
@@ -404,160 +402,160 @@
 		</Card>
 
 		<!-- Pump Timer Controller -->
-	<Card>
-		<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-			<CardTitle class="text-xl font-bold">Pool Pump Timer</CardTitle>
-			{#if controller.pump_timer}
-				<Button
-					variant={controller.pump_timer.running ? 'destructive' : 'default'}
-					size="sm"
-					on:click={togglePumpTimerController}
-				>
-					{controller.pump_timer.running ? 'Stop' : 'Start'}
-				</Button>
-			{/if}
-		</CardHeader>
-		<CardContent>
-			{#if controller.pump_timer}
-				<div class="mb-4 space-y-2">
-					<div class="flex justify-between">
-						<span class="text-sm text-muted-foreground">Status:</span>
-						<Badge variant={controller.pump_timer.pump_running ? 'success' : 'secondary'}>
-							{controller.pump_timer.pump_running ? 'Running' : 'Idle'}
-						</Badge>
-					</div>
-					
-					<div class="flex justify-between">
-						<span class="text-sm text-muted-foreground">Last Temperature:</span>
-						<span class="font-medium">
-							{controller.pump_timer.last_temperature ? 
-								controller.pump_timer.last_temperature.toFixed(1) + '°C' : 'N/A'}
-						</span>
-					</div>
-					
-					<div class="flex justify-between">
-						<span class="text-sm text-muted-foreground">Current Run Time:</span>
-						<span class="font-medium">
-							{controller.pump_timer.current_run_time} minutes
-						</span>
-					</div>
-					
-					{#if controller.pump_timer.last_run_start > 0}
+		<Card>
+			<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+				<CardTitle class="text-xl font-bold">Pool Pump Timer</CardTitle>
+				{#if controller.pump_timer}
+					<Button
+						variant={controller.pump_timer.running ? 'destructive' : 'default'}
+						size="sm"
+						on:click={togglePumpTimerController}
+					>
+						{controller.pump_timer.running ? 'Stop' : 'Start'}
+					</Button>
+				{/if}
+			</CardHeader>
+			<CardContent>
+				{#if controller.pump_timer}
+					<div class="mb-4 space-y-2">
 						<div class="flex justify-between">
-							<span class="text-sm text-muted-foreground">Last Run:</span>
-							<span class="text-sm">
-								{new Date(controller.pump_timer.last_run_start * 1000).toLocaleString()}
-							</span>
+							<span class="text-sm text-muted-foreground">Status:</span>
+							<Badge variant={controller.pump_timer.pump_running ? 'success' : 'secondary'}>
+								{controller.pump_timer.pump_running ? 'Running' : 'Idle'}
+							</Badge>
 						</div>
-						
-						<div class="flex justify-between">
-							<span class="text-sm text-muted-foreground">Run Duration:</span>
-							<span class="text-sm">
-								{controller.pump_timer.last_run_duration.toFixed(1)} minutes
-							</span>
-						</div>
-					{/if}
-					
-					<div class="flex justify-between">
-						<span class="text-sm text-muted-foreground">Schedule:</span>
-						<span class="font-medium">
-							{controller.pump_timer.start_hour}:00 - {controller.pump_timer.end_hour}:00
-						</span>
-					</div>
-				</div>
 
-				<form on:submit|preventDefault={handlePumpTimerSubmit} class="space-y-4">
-					<div class="grid grid-cols-2 gap-4">
-						<div class="space-y-2">
-							<Label for="pumpMinRunTime">Min Run Time (min)</Label>
-							<Input
-								id="pumpMinRunTime"
-								type="number"
-								bind:value={pumpMinRunTime}
-								step="5"
-								min="5"
-								max="60"
-							/>
+						<div class="flex justify-between">
+							<span class="text-sm text-muted-foreground">Last Temperature:</span>
+							<span class="font-medium">
+								{controller.pump_timer.last_temperature
+									? controller.pump_timer.last_temperature.toFixed(1) + '°C'
+									: 'N/A'}
+							</span>
 						</div>
-						
-						<div class="space-y-2">
-							<Label for="pumpMaxRunTime">Max Run Time (min)</Label>
-							<Input
-								id="pumpMaxRunTime"
-								type="number"
-								bind:value={pumpMaxRunTime}
-								step="10"
-								min="30"
-								max="240"
-							/>
+
+						<div class="flex justify-between">
+							<span class="text-sm text-muted-foreground">Current Run Time:</span>
+							<span class="font-medium">
+								{controller.pump_timer.current_run_time} minutes
+							</span>
+						</div>
+
+						{#if controller.pump_timer.last_run_start > 0}
+							<div class="flex justify-between">
+								<span class="text-sm text-muted-foreground">Last Run:</span>
+								<span class="text-sm">
+									{new Date(controller.pump_timer.last_run_start * 1000).toLocaleString()}
+								</span>
+							</div>
+
+							<div class="flex justify-between">
+								<span class="text-sm text-muted-foreground">Run Duration:</span>
+								<span class="text-sm">
+									{controller.pump_timer.last_run_duration.toFixed(1)} minutes
+								</span>
+							</div>
+						{/if}
+
+						<div class="flex justify-between">
+							<span class="text-sm text-muted-foreground">Schedule:</span>
+							<span class="font-medium">
+								{controller.pump_timer.start_hour}:00 - {controller.pump_timer.end_hour}:00
+							</span>
 						</div>
 					</div>
-					
-					<div class="space-y-2">
-						<Label for="pumpTempCheckDelay">Temperature Check Delay (min)</Label>
-						<Input
-							id="pumpTempCheckDelay"
-							type="number"
-							bind:value={pumpTempCheckDelay}
-							step="1"
-							min="1"
-							max="30"
-						/>
-					</div>
-					
-					<div class="grid grid-cols-2 gap-4">
+
+					<form on:submit|preventDefault={handlePumpTimerSubmit} class="space-y-4">
+						<div class="grid grid-cols-2 gap-4">
+							<div class="space-y-2">
+								<Label for="pumpMinRunTime">Min Run Time (min)</Label>
+								<Input
+									id="pumpMinRunTime"
+									type="number"
+									bind:value={pumpMinRunTime}
+									step="5"
+									min="5"
+									max="60"
+								/>
+							</div>
+
+							<div class="space-y-2">
+								<Label for="pumpMaxRunTime">Max Run Time (min)</Label>
+								<Input
+									id="pumpMaxRunTime"
+									type="number"
+									bind:value={pumpMaxRunTime}
+									step="10"
+									min="30"
+									max="240"
+								/>
+							</div>
+						</div>
+
 						<div class="space-y-2">
-							<Label for="pumpStartHour">Start Hour (24h)</Label>
+							<Label for="pumpTempCheckDelay">Temperature Check Delay (min)</Label>
 							<Input
-								id="pumpStartHour"
+								id="pumpTempCheckDelay"
 								type="number"
-								bind:value={pumpStartHour}
+								bind:value={pumpTempCheckDelay}
 								step="1"
-								min="0"
-								max="23"
+								min="1"
+								max="30"
 							/>
 						</div>
-						
+
+						<div class="grid grid-cols-2 gap-4">
+							<div class="space-y-2">
+								<Label for="pumpStartHour">Start Hour (24h)</Label>
+								<Input
+									id="pumpStartHour"
+									type="number"
+									bind:value={pumpStartHour}
+									step="1"
+									min="0"
+									max="23"
+								/>
+							</div>
+
+							<div class="space-y-2">
+								<Label for="pumpEndHour">End Hour (24h)</Label>
+								<Input
+									id="pumpEndHour"
+									type="number"
+									bind:value={pumpEndHour}
+									step="1"
+									min="0"
+									max="23"
+								/>
+							</div>
+						</div>
+
 						<div class="space-y-2">
-							<Label for="pumpEndHour">End Hour (24h)</Label>
-							<Input
-								id="pumpEndHour"
-								type="number"
-								bind:value={pumpEndHour}
-								step="1"
-								min="0"
-								max="23"
-							/>
+							<Label>Temperature Thresholds</Label>
+							<div class="grid grid-cols-2 gap-2 rounded-md border p-2">
+								<div class="text-sm font-medium">Temperature (°C)</div>
+								<div class="text-sm font-medium">Run Time (min)</div>
+
+								{#each Object.entries(controller.pump_timer.temp_thresholds).sort((a, b) => parseInt(a[0]) - parseInt(b[0])) as [temp, duration]}
+									<div class="text-sm">{temp}°C</div>
+									<div class="text-sm">{duration} min</div>
+								{/each}
+							</div>
+							<p class="text-xs text-muted-foreground">
+								Note: Temperature thresholds can be configured in the settings page
+							</p>
 						</div>
-					</div>
-					
-					<div class="space-y-2">
-						<Label>Temperature Thresholds</Label>
-						<div class="grid grid-cols-2 gap-2 rounded-md border p-2">
-							<div class="text-sm font-medium">Temperature (°C)</div>
-							<div class="text-sm font-medium">Run Time (min)</div>
-							
-							{#each Object.entries(controller.pump_timer.temp_thresholds).sort((a, b) => parseInt(a[0]) - parseInt(b[0])) as [temp, duration]}
-								<div class="text-sm">{temp}°C</div>
-								<div class="text-sm">{duration} min</div>
-							{/each}
-						</div>
-						<p class="text-xs text-muted-foreground">
-							Note: Temperature thresholds can be configured in the settings page
-						</p>
-					</div>
-					
-					<Button type="submit" class="w-full">Update</Button>
-				</form>
-			{:else}
-				<div class="py-4 text-center text-muted-foreground">Loading pump timer data...</div>
-			{/if}
-		</CardContent>
-	</Card>
+
+						<Button type="submit" class="w-full">Update</Button>
+					</form>
+				{:else}
+					<div class="py-4 text-center text-muted-foreground">Loading pump timer data...</div>
+				{/if}
+			</CardContent>
+		</Card>
 	</div>
 
 	<div class="text-sm text-muted-foreground">
 		Last updated: {controller.lastUpdated ? controller.lastUpdated.toLocaleString() : 'Never'}
 	</div>
 </div>
-

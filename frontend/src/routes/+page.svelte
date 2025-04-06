@@ -28,7 +28,7 @@
 
 	// Interval ID for cleanup
 	let intervalId;
-	
+
 	// Add function to force pump run
 	async function forcePumpRun() {
 		try {
@@ -38,7 +38,7 @@
 					'Content-Type': 'application/json'
 				}
 			});
-			
+
 			const result = await response.json();
 			if (result.success) {
 				// Refresh controller data to update UI
@@ -159,7 +159,7 @@
 			</CardContent>
 		</Card>
 	</div>
-	
+
 	<!-- Add Pool Pump Card -->
 	{#if controller.pump_timer}
 		<Card>
@@ -175,8 +175,9 @@
 						<div>
 							<p class="text-sm font-medium">Last Temperature</p>
 							<p class="text-2xl font-bold">
-								{controller.pump_timer.last_temperature ? 
-									controller.pump_timer.last_temperature.toFixed(1) + '°C' : 'N/A'}
+								{controller.pump_timer.last_temperature
+									? controller.pump_timer.last_temperature.toFixed(1) + '°C'
+									: 'N/A'}
 							</p>
 						</div>
 						<div>
@@ -186,7 +187,7 @@
 							</p>
 						</div>
 					</div>
-					
+
 					<div class="grid grid-cols-2 gap-4">
 						<div>
 							<p class="text-sm font-medium">Schedule</p>
@@ -201,10 +202,10 @@
 							</Badge>
 						</div>
 					</div>
-					
-					<Button 
-						variant="default" 
-						class="w-full" 
+
+					<Button
+						variant="default"
+						class="w-full"
 						onclick={forcePumpRun}
 						disabled={!controller.pump_timer.enabled}
 					>
