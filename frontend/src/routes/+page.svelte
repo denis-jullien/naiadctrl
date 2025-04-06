@@ -28,6 +28,26 @@
 
 	// Interval ID for cleanup
 	let intervalId;
+	
+	// Add function to force pump run
+	async function forcePumpRun() {
+		try {
+			const response = await fetch('http://localhost:8000/api/controllers/pump_timer/force_run', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+			
+			const result = await response.json();
+			if (result.success) {
+				// Refresh controller data to update UI
+				await fetchControllerData();
+			}
+		} catch (error) {
+			console.error('Error forcing pump run:', error);
+		}
+	}
 
 	let makeFmt = (suffix) => (u, v, sidx, didx) => {
 		if (didx == null) {
@@ -139,8 +159,64 @@
 			</CardContent>
 		</Card>
 	</div>
+	
+	<!-- Add Pool Pump Card -->
+	{#if controller.pump_timer}
+		<Card>
+			<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+				<CardTitle>Pool Pump Control</CardTitle>
+				<Badge variant={controller.pump_timer.pump_running ? 'success' : 'secondary'}>
+					{controller.pump_timer.pump_running ? 'Running' : 'Idle'}
+				</Badge>
+			</CardHeader>
+			<CardContent>
+				<div class="space-y-4">
+					<div class="grid grid-cols-2 gap-4">
+						<div>
+							<p class="text-sm font-medium">Last Temperature</p>
+							<p class="text-2xl font-bold">
+								{controller.pump_timer.last_temperature ? 
+									controller.pump_timer.last_temperature.toFixed(1) + '°C' : 'N/A'}
+							</p>
+						</div>
+						<div>
+							<p class="text-sm font-medium">Current Run Time</p>
+							<p class="text-2xl font-bold">
+								{controller.pump_timer.current_run_time || 0} min
+							</p>
+						</div>
+					</div>
+					
+					<div class="grid grid-cols-2 gap-4">
+						<div>
+							<p class="text-sm font-medium">Schedule</p>
+							<p class="text-lg">
+								{controller.pump_timer.start_hour}:00 - {controller.pump_timer.end_hour}:00
+							</p>
+						</div>
+						<div>
+							<p class="text-sm font-medium">Controller Status</p>
+							<Badge variant={controller.pump_timer.enabled ? 'success' : 'secondary'}>
+								{controller.pump_timer.enabled ? 'Enabled' : 'Disabled'}
+							</Badge>
+						</div>
+					</div>
+					
+					<Button 
+						variant="default" 
+						class="w-full" 
+						onclick={forcePumpRun}
+						disabled={!controller.pump_timer.enabled}
+					>
+						Force Pump Run Until Next Cycle
+					</Button>
+				</div>
+			</CardContent>
+		</Card>
+	{/if}
 
 	<div class="grid gap-4 lg:grid-cols-2">
+		<!-- Charts remain unchanged -->
 		<!-- pH Chart -->
 		<Card>
 			<CardHeader>
@@ -236,10 +312,6 @@
 			</CardContent>
 		</Card>
 	</div>
-
-	<!-- sensorHistory{$sensorHistory["air_temperature"]} -->
-	<!-- 
-  {[history.timestamps, history.air_temperature]} -->
 
 	<div class="text-xs text-muted-foreground">
 		Last updated: {sensor.lastUpdated ? sensor.lastUpdated.toLocaleString() : 'Never'}

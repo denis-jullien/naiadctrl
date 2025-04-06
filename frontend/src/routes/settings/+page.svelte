@@ -274,6 +274,186 @@
 									</div>
 								</div>
 							</div>
+							<div>
+								<h3 class="text-lg font-medium">Pool Pump Timer</h3>
+								<div class="mt-2 grid grid-cols-3 gap-4">
+									<div class="space-y-2">
+										<Label for="pump-check-interval">Check Interval (seconds)</Label>
+										<Input
+											id="pump-check-interval"
+											type="number"
+											bind:value={localConfig.controllers.pump_timer.check_interval}
+										/>
+									</div>
+									<div class="space-y-2">
+										<Label for="pump-pin">Pump Pin</Label>
+										<Input
+											id="pump-pin"
+											type="number"
+											bind:value={localConfig.controllers.pump_timer.pump_pin}
+										/>
+									</div>
+								</div>
+								
+								<div class="mt-4">
+									<Label>Temperature Thresholds</Label>
+									<div class="mt-2 grid grid-cols-2 gap-4">
+										{#each Object.entries(localConfig.controllers.pump_timer.temp_thresholds || {}).sort((a, b) => parseInt(a[0]) - parseInt(b[0])) as [temp, duration], i}
+											<div class="space-y-2">
+												<Label for={`temp-threshold-${i}`}>Temperature (°C)</Label>
+												<Input
+													id={`temp-threshold-${i}`}
+													type="number"
+													value={temp}
+													on:input={(e) => {
+														const newTemp = parseInt(e.target.value);
+														const oldTemp = parseInt(temp);
+														if (!isNaN(newTemp) && newTemp > 0) {
+															const newThresholds = { ...localConfig.controllers.pump_timer.temp_thresholds };
+															delete newThresholds[oldTemp];
+															newThresholds[newTemp] = duration;
+															localConfig.controllers.pump_timer.temp_thresholds = newThresholds;
+														}
+													}}
+												/>
+											</div>
+											<div class="space-y-2">
+												<Label for={`duration-threshold-${i}`}>Run Time (minutes)</Label>
+												<Input
+													id={`duration-threshold-${i}`}
+													type="number"
+													value={duration}
+													on:input={(e) => {
+														const newDuration = parseInt(e.target.value);
+														if (!isNaN(newDuration) && newDuration > 0) {
+															localConfig.controllers.pump_timer.temp_thresholds[temp] = newDuration;
+														}
+													}}
+												/>
+											</div>
+										{/each}
+									</div>
+									
+									<div class="mt-2 flex justify-between">
+										<Button
+											variant="outline"
+											size="sm"
+											on:click={() => {
+												const newThresholds = { ...localConfig.controllers.pump_timer.temp_thresholds };
+												newThresholds[20] = 30; // Default new threshold
+												localConfig.controllers.pump_timer.temp_thresholds = newThresholds;
+											}}
+										>
+											Add Threshold
+										</Button>
+										
+										<Button
+											variant="destructive"
+											size="sm"
+											on:click={() => {
+												const entries = Object.entries(localConfig.controllers.pump_timer.temp_thresholds || {});
+												if (entries.length > 0) {
+													const newThresholds = { ...localConfig.controllers.pump_timer.temp_thresholds };
+													delete newThresholds[entries[entries.length - 1][0]];
+													localConfig.controllers.pump_timer.temp_thresholds = newThresholds;
+												}
+											}}
+										>
+											Remove Last
+										</Button>
+									</div>
+								</div>
+							</div>
+							<div>
+								<h3 class="text-lg font-medium">Pool Pump Timer</h3>
+								<div class="mt-2 grid grid-cols-3 gap-4">
+									<div class="space-y-2">
+										<Label for="pump-check-interval">Check Interval (seconds)</Label>
+										<Input
+											id="pump-check-interval"
+											type="number"
+											bind:value={localConfig.controllers.pump_timer.check_interval}
+										/>
+									</div>
+									<div class="space-y-2">
+										<Label for="pump-pin">Pump Pin</Label>
+										<Input
+											id="pump-pin"
+											type="number"
+											bind:value={localConfig.controllers.pump_timer.pump_pin}
+										/>
+									</div>
+								</div>
+								
+								<div class="mt-4">
+									<Label>Temperature Thresholds</Label>
+									<div class="mt-2 grid grid-cols-2 gap-4">
+										{#each Object.entries(localConfig.controllers.pump_timer.temp_thresholds || {}).sort((a, b) => parseInt(a[0]) - parseInt(b[0])) as [temp, duration], i}
+											<div class="space-y-2">
+												<Label for={`temp-threshold-${i}`}>Temperature (°C)</Label>
+												<Input
+													id={`temp-threshold-${i}`}
+													type="number"
+													value={temp}
+													on:input={(e) => {
+														const newTemp = parseInt(e.target.value);
+														const oldTemp = parseInt(temp);
+														if (!isNaN(newTemp) && newTemp > 0) {
+															const newThresholds = { ...localConfig.controllers.pump_timer.temp_thresholds };
+															delete newThresholds[oldTemp];
+															newThresholds[newTemp] = duration;
+															localConfig.controllers.pump_timer.temp_thresholds = newThresholds;
+														}
+													}}
+												/>
+											</div>
+											<div class="space-y-2">
+												<Label for={`duration-threshold-${i}`}>Run Time (minutes)</Label>
+												<Input
+													id={`duration-threshold-${i}`}
+													type="number"
+													value={duration}
+													on:input={(e) => {
+														const newDuration = parseInt(e.target.value);
+														if (!isNaN(newDuration) && newDuration > 0) {
+															localConfig.controllers.pump_timer.temp_thresholds[temp] = newDuration;
+														}
+													}}
+												/>
+											</div>
+										{/each}
+									</div>
+									
+									<div class="mt-2 flex justify-between">
+										<Button
+											variant="outline"
+											size="sm"
+											on:click={() => {
+												const newThresholds = { ...localConfig.controllers.pump_timer.temp_thresholds };
+												newThresholds[20] = 30; // Default new threshold
+												localConfig.controllers.pump_timer.temp_thresholds = newThresholds;
+											}}
+										>
+											Add Threshold
+										</Button>
+										
+										<Button
+											variant="destructive"
+											size="sm"
+											on:click={() => {
+												const entries = Object.entries(localConfig.controllers.pump_timer.temp_thresholds || {});
+												if (entries.length > 0) {
+													const newThresholds = { ...localConfig.controllers.pump_timer.temp_thresholds };
+													delete newThresholds[entries[entries.length - 1][0]];
+													localConfig.controllers.pump_timer.temp_thresholds = newThresholds;
+												}
+											}}
+										>
+											Remove Last
+										</Button>
+									</div>
+								</div>
+							</div>
 						</div>
 					</TabsContent>
 

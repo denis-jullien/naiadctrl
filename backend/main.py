@@ -16,6 +16,7 @@ from sensors.sht41 import SHT41
 from controllers.ph_controller import PHController
 from controllers.orp_controller import ORPController
 from controllers.ec_controller import ECController
+from controllers.pump_timer_controller import PumpTimerController
 
 # Import outputs
 from outputs.mosfet_control import MOSFETControl
@@ -441,6 +442,41 @@ class HydroponicSystem:
             )
             print("Initialized EC controller")
 
+        # Add pump timer controller initialization
+        try:
+            pump_timer_config = self.config.get("controllers", {}).get("pump_timer", {})
+            if pump_timer_config and pump_timer_config.get("enabled", False):
+                if "temperature" in self.sensors:
+                    pump_pin = pump_timer_config.get("pump_pin")
+                    min_run_time = pump_timer_config.get("min_run_time", 15)
+                    max_run_time = pump_timer_config.get("max_run_time", 120)
+                    temp_check_delay = pump_timer_config.get("temp_check_delay", 5)
+                    check_interval = pump_timer_config.get("check_interval", 60)
+                    
+                    # Convert string keys to integers for temperature thresholds
+                    temp_thresholds = pump_timer_config.get("temp_thresholds", {})
+                    temp_thresholds = {int(k): v for k, v in temp_thresholds.items()}
+                    
+                    start_hour = pump_timer_config.get("start_hour", 8)
+                    end_hour = pump_timer_config.get("end_hour", 20)
+                    
+                    self.controllers["pump_timer"] = PumpTimerController(
+                        self.sensors["temperature"],
+                        pump_pin,
+                        self.outputs,
+                        min_run_time=min_run_time,
+                        max_run_time=max_run_time,
+                        temp_check_delay=temp_check_delay,
+                        check_interval=check_interval,
+                        temp_thresholds=temp_thresholds,
+                        start_hour=start_hour,
+                        end_hour=end_hour
+                    )
+                    print("Initialized pump timer controller")
+                else:
+                    print("Cannot initialize pump timer controller: temperature sensor not found")
+        except Exception as e:
+            print(f"Error initializing pump timer controller: {e}")
 
 async def main():
     """Main entry point"""

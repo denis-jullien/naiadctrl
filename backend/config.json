@@ -53,7 +53,7 @@
             "target": 6.0,
             "tolerance": 0.2,
             "check_interval": 60,
-            "acid_pump_pin": 5,
+            "acid_pump_pin": 6,
             "base_pump_pin": 6
         },
         "orp": {
@@ -71,6 +71,21 @@
             "check_interval": 60,
             "nutrient_pump_pin": 9,
             "water_pump_pin": 10
+        },
+        "pump_timer": {
+            "enabled": true,
+            "pump_pin": 5,
+            "min_run_time": 15,
+            "max_run_time": 120,
+            "temp_check_delay": 5,
+            "check_interval": 60,
+            "temp_thresholds": {
+                "20": 30,
+                "25": 60,
+                "30": 90
+            },
+            "start_hour": 8,
+            "end_hour": 20
         }
     },
     "api": {

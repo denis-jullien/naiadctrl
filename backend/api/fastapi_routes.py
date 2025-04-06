@@ -408,7 +408,59 @@ class HydroFastAPI:
             #         raise e
             #     raise HTTPException(status_code=500, detail=str(e))
 
-            # Add this to the existing HydroFastAPI class
+       
+            
+        @self.app.post("/api/controllers/pump_timer")
+        async def update_pump_timer_controller(data: dict):
+            """Update pump timer controller settings"""
+            try:
+                if "pump_timer" in controllers:
+                    # Update schedule
+                    if "start_hour" in data and "end_hour" in data:
+                        controllers["pump_timer"].set_schedule(
+                            int(data["start_hour"]), 
+                            int(data["end_hour"])
+                        )
+                        
+                    # Update run times
+                    if "min_run_time" in data:
+                        controllers["pump_timer"].min_run_time = int(data["min_run_time"])
+                        
+                    if "max_run_time" in data:
+                        controllers["pump_timer"].max_run_time = int(data["max_run_time"])
+                        
+                    # Update temperature check delay
+                    if "temp_check_delay" in data:
+                        controllers["pump_timer"].temp_check_delay = int(data["temp_check_delay"])
+                        
+                    # Update temperature thresholds
+                    if "temp_thresholds" in data:
+                        # Convert string keys to integers
+                        temp_thresholds = {int(k): int(v) for k, v in data["temp_thresholds"].items()}
+                        controllers["pump_timer"].set_thresholds(temp_thresholds)
+                        
+                    return {"success": True}
+                return {"success": False, "error": "Pump timer controller not found"}
+            except Exception as e:
+                return {"success": False, "error": str(e)}
+        
+        # Update the controller data endpoint to include pump timer
+        @self.app.get("/api/controllers")
+        async def get_controllers():
+            """Get controller data"""
+            try:
+                controller_data = {}
+                
+                for controller_id, controller in self.controllers.items():
+                    data[controller_id] = controller.get_status()
+                
+                # Add pump timer controller
+                if "pump_timer" in controllers:
+                    controller_data["pump_timer"] = controllers["pump_timer"].get_status()
+                    
+                return controller_data
+            except Exception as e:
+                return {"error": str(e)}
 
         # History routes
         @self.app.get("/api/history")
@@ -448,3 +500,16 @@ class HydroFastAPI:
                 if isinstance(e, HTTPException):
                     raise e
                 raise HTTPException(status_code=500, detail=str(e))
+
+        # Add this endpoint to your FastAPI routes
+        
+        @self.app.post("/api/controllers/pump_timer/force_run")
+        async def force_pump_run():
+            """Force the pump to run until the next automatic cycle"""
+            try:
+                if "pump_timer" in controllers:
+                    result = await controllers["pump_timer"].force_run()
+                    return {"success": result}
+                return {"success": False, "error": "Pump timer controller not found"}
+            except Exception as e:
+                return {"success": False, "error": str(e)}
