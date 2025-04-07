@@ -10,6 +10,8 @@
 		CardTitle
 	} from '$lib/components/ui/card';
 	import { Progress } from '$lib/components/ui/progress';
+	// Add these imports if not already present
+	import { Badge } from '$lib/components/ui/badge';
 
 	// Update interval (in ms)
 	const UPDATE_INTERVAL = 5000; // 5 seconds
@@ -62,6 +64,15 @@
 		if (!value) return 'bg-gray-200';
 		return value < 40 ? 'bg-orange-500' : value > 80 ? 'bg-blue-500' : 'bg-green-500';
 	}
+
+
+	// Format timestamp function (add if not already present)
+	function formatTimestamp(timestamp) {
+		if (!timestamp) return 'Never';
+		return new Date(timestamp * 1000).toLocaleString();
+	}
+
+
 </script>
 
 <div class="space-y-6">
@@ -318,6 +329,50 @@
 				</div>
 			</CardContent>
 		</Card>
+
+		<!-- Generic Sensors Section -->
+		{#each Object.entries(sensor) as [sensorId, sensorData]}
+			{#if sensorData && typeof sensorData === 'object' && sensorData.type === 'generic'}
+				<Card class="col-span-1">
+					<CardHeader>
+						<CardTitle>{sensorData.name || sensorId}</CardTitle>
+						<CardDescription>
+							{sensorData.initialized ? 'Connected' : 'Disconnected'}
+							{#if sensorData.has_calibration}
+								<Badge variant="outline" class="ml-2">Calibrated</Badge>
+							{/if}
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div class="space-y-4">
+							<div class="text-3xl font-bold">
+								{sensorData.value !== undefined && sensorData.value !== null
+									? typeof sensorData.value === 'number'
+										? sensorData.value.toFixed(2)
+										: sensorData.value
+									: 'N/A'}
+								{#if sensorData.unit}
+									<span class="text-sm font-normal">{sensorData.unit}</span>
+								{/if}
+							</div>
+
+							<div class="space-y-2">
+								<div class="flex items-center justify-between text-xs text-muted-foreground">
+									<span>Status:</span>
+									<span class={sensorData.initialized ? 'text-green-500' : 'text-red-500'}>
+										{sensorData.initialized ? 'Online' : 'Offline'}
+									</span>
+								</div>
+								<div class="flex items-center justify-between text-xs text-muted-foreground">
+									<span>Last Reading:</span>
+									<span>{formatTimestamp(sensorData.last_reading_time)}</span>
+								</div>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+			{/if}
+		{/each}
 	</div>
 
 	<div class="text-sm text-muted-foreground">
