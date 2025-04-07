@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any
 import asyncio
-
+import logging
+import time
 
 class HydroFastAPI:
     """
@@ -25,6 +26,9 @@ class HydroFastAPI:
         self.config = config
         self.outputs = outputs
         self.log_handler = log_handler
+
+        # Get a logger for this module
+        self.logger = logging.getLogger(__name__)
 
         # Setup CORS
         self.app.add_middleware(
@@ -605,30 +609,30 @@ class HydroFastAPI:
         async def update_pump_timer_controller(data: dict):
             """Update pump timer controller settings"""
             try:
-                if "pump_timer" in controllers:
+                if "pump_timer" in self.controllers:
                     # Update schedule
                     if "start_hour" in data and "end_hour" in data:
-                        controllers["pump_timer"].set_schedule(
+                        self.controllers["pump_timer"].set_schedule(
                             int(data["start_hour"]), 
                             int(data["end_hour"])
                         )
                         
                     # Update run times
                     if "min_run_time" in data:
-                        controllers["pump_timer"].min_run_time = int(data["min_run_time"])
+                        self.controllers["pump_timer"].min_run_time = int(data["min_run_time"])
                         
                     if "max_run_time" in data:
-                        controllers["pump_timer"].max_run_time = int(data["max_run_time"])
+                        self.controllers["pump_timer"].max_run_time = int(data["max_run_time"])
                         
                     # Update temperature check delay
                     if "temp_check_delay" in data:
-                        controllers["pump_timer"].temp_check_delay = int(data["temp_check_delay"])
+                        self.controllers["pump_timer"].temp_check_delay = int(data["temp_check_delay"])
                         
                     # Update temperature thresholds
                     if "temp_thresholds" in data:
                         # Convert string keys to integers
                         temp_thresholds = {int(k): int(v) for k, v in data["temp_thresholds"].items()}
-                        controllers["pump_timer"].set_thresholds(temp_thresholds)
+                        self.controllers["pump_timer"].set_thresholds(temp_thresholds)
                         
                     return {"success": True}
                 return {"success": False, "error": "Pump timer controller not found"}
@@ -640,16 +644,12 @@ class HydroFastAPI:
         async def get_controllers():
             """Get controller data"""
             try:
-                controller_data = {}
+                data = {}
                 
                 for controller_id, controller in self.controllers.items():
                     data[controller_id] = controller.get_status()
-                
-                # Add pump timer controller
-                if "pump_timer" in controllers:
-                    controller_data["pump_timer"] = controllers["pump_timer"].get_status()
                     
-                return controller_data
+                return data
             except Exception as e:
                 return {"error": str(e)}
 
@@ -697,11 +697,13 @@ class HydroFastAPI:
         async def force_pump_run():
             """Force the pump to run until the next automatic cycle"""
             try:
-                if "pump_timer" in controllers:
-                    result = await controllers["pump_timer"].force_run()
+                if "pump_timer" in self.controllers:
+                    result = await self.controllers["pump_timer"].force_run()
                     return {"success": result}
+                self.logger.warning("Pump timer controller not found")
                 return {"success": False, "error": "Pump timer controller not found"}
             except Exception as e:
+                self.logger.error(f"Pump timer error : {str(e)}")
                 return {"success": False, "error": str(e)}
 
         # Add this endpoint
