@@ -120,6 +120,7 @@
 
 	onDestroy(() => {
 		// Clean up interval
+		console.log('Destroying Logs page');
 		if (intervalId) {
 			clearInterval(intervalId);
 		}

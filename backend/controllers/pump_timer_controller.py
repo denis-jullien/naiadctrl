@@ -168,16 +168,36 @@ class PumpTimerController:
             self.last_run_duration = (time.time() - self.last_run_start) / 60  # in minutes
             print(f"Pump stopped after {self.last_run_duration:.1f} minutes")
 
+    async def run_continuously(self):
+        """Run the pump continuously until manually stopped"""
+
+        # Turn on the pump
+        self.mosfet_control.set_output(self.pump_pin, True)
+        self.pump_running = True
+        self.last_run_start = time.time()
+        self.current_run_time = 0  # This will increase as time passes
+        
+        # Set scheduled end time to a very large value (effectively infinite)
+        self.scheduled_end_time = float('inf')
+        
+        print(f"Pump started in continuous mode")
+        return True
+        
+        
     async def check_and_adjust(self):
         """Check conditions and adjust pump state"""
         try:
             current_time = time.time()
             
-            # If pump is running, check if it's time to stop
+            # If pump is running, update current run time
             if self.pump_running:
+                # Update current run time
+                self.current_run_time = (current_time - self.last_run_start) / 60  # in minutes
+                
                 # If we've been running for temp_check_delay minutes, check temperature
                 if (current_time - self.last_run_start) >= (self.temp_check_delay * 60) and \
-                   (current_time - self.last_run_start) < (self.temp_check_delay * 60 + 60):  # Only check once
+                   (current_time - self.last_run_start) < (self.temp_check_delay * 60 + 60) and \
+                   self.scheduled_end_time != float('inf'):  # Skip for continuous mode
                     
                     # Read temperature
                     temperature = await self.temperature_sensor.read_temperature()
@@ -192,8 +212,8 @@ class PumpTimerController:
                     
                     print(f"Temperature: {temperature}°C, adjusted run time: {new_run_time} minutes")
                 
-                # Check if it's time to stop the pump
-                if current_time >= self.scheduled_end_time:
+                # Check if it's time to stop the pump (skip for continuous mode)
+                if self.scheduled_end_time != float('inf') and current_time >= self.scheduled_end_time:
                     await self.stop_pump()
             
             # If pump is not running, check if it's time to start

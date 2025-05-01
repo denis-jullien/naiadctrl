@@ -98,12 +98,11 @@
 
 	onDestroy(() => {
 		// Clean up interval
+		console.log('Cleaning up controllers interval');
 		if (intervalId) {
 			clearInterval(intervalId);
 		}
 	});
-
-	// ... existing imports and variables ...
 
 	// Add new form values for pump timer
 	let pumpMinRunTime = 15;
@@ -158,6 +157,26 @@
 		pumpStartHour = controller.pump_timer.start_hour || 8;
 		pumpEndHour = controller.pump_timer.end_hour || 20;
 		pumpTempThresholds = controller.pump_timer.temp_thresholds || {};
+	}
+
+	// Add function to run pump continuously
+	async function runPumpContinuously() {
+		try {
+			const response = await fetch('http://localhost:8000/api/controllers/pump_timer/continuous', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+	
+			const result = await response.json();
+	
+			if (result.success) {
+				await fetchControllerData();
+			}
+		} catch (error) {
+			console.error('Error starting continuous pump operation:', error);
+		}
 	}
 </script>
 
@@ -403,16 +422,26 @@
 
 		<!-- Pump Timer Controller -->
 		<Card>
-			<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+			<CardHeader class="flex flex-row items-center space-y-0 pb-2">
 				<CardTitle class="text-xl font-bold">Pool Pump Timer</CardTitle>
 				{#if controller.pump_timer}
 					<Button
 						variant={controller.pump_timer.running ? 'destructive' : 'default'}
 						size="sm"
-						on:click={togglePumpTimerController}
+						class="ml-auto"
+						onclick={togglePumpTimerController}
 					>
 						{controller.pump_timer.running ? 'Stop' : 'Start'}
 					</Button>
+
+					<Button 
+					variant="destructive" 
+					class="mx-2"
+					onclick={runPumpContinuously}
+				>
+					Run Continuously
+				</Button>
+					
 				{/if}
 			</CardHeader>
 			<CardContent>

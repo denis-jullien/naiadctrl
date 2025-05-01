@@ -717,3 +717,14 @@ class HydroFastAPI:
                 return {"logs": [], "error": "Log handler not initialized"}
             except Exception as e:
                 return {"logs": [], "error": str(e)}
+
+        @self.app.post("/api/controllers/pump_timer/continuous")
+        async def run_pump_continuously():
+            """Run the pump continuously until manually stopped"""
+            try:
+                if "pump_timer" in self.controllers:
+                    success = await self.controllers["pump_timer"].run_continuously()
+                    return {"success": success}
+                return {"success": False, "error": "Pump timer controller not found"}
+            except Exception as e:
+                return {"success": False, "error": str(e)}
