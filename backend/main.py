@@ -200,32 +200,47 @@ class HydroponicSystem:
     def cleanup(self):
         """Clean up resources"""
         self.logger.info("Cleaning up resources...")
-
+        
+        # Cancel all running tasks
+        for task in self.tasks:
+            if not task.done():
+                task.cancel()
+        
+        # Stop controllers first
+        for controller_id, controller in self.controllers.items():
+            try:
+                controller.stop()
+            except Exception as e:
+                self.logger.error(f"Error stopping {controller_id} controller: {e}")
+    
         # Save history data
         if self.history_storage:
             self.history_storage.save()
-
-        # Stop controllers
-        for controller_id, controller in self.controllers.items():
-            controller.stop()
-
+    
         # Clean up sensors
         for sensor_id, sensor in self.sensors.items():
             # Check if the sensor has a close method before calling it
             if hasattr(sensor, "close"):
                 try:
                     sensor.close()
+                    self.logger.info(f"Closed {sensor_id} sensor")
                 except Exception as e:
                     self.logger.error(f"Error closing {sensor_id} sensor: {e}")
-
+    
         # Clean up outputs
         if self.outputs:
-            self.outputs.close()
-
+            try:
+                self.outputs.close()
+            except Exception as e:
+                self.logger.error(f"Error closing outputs: {e}")
+    
         # Stop MQTT client
         if self.mqtt_client:
-            self.mqtt_client.stop()
-
+            try:
+                self.mqtt_client.stop()
+            except Exception as e:
+                self.logger.error(f"Error stopping MQTT client: {e}")
+    
         self.logger.info("Cleanup complete")
 
     async def _initialize_sensors(self):
@@ -558,12 +573,14 @@ async def main():
     system = HydroponicSystem()
 
     # Handle signals for graceful shutdown
-    loop = asyncio.get_event_loop()
-
+    loop = asyncio.get_running_loop()
+    
     def signal_handler():
+        # First clean up resources
         system.cleanup()
+        # Then stop the loop
         loop.stop()
-
+        
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, signal_handler)
 
