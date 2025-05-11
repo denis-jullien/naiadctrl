@@ -242,17 +242,17 @@ static int cs1237_init(struct cs1237_dev *cs1237)
     /* Wait for startup time */
     usleep_range(CS1237_T_STARTUP_US, CS1237_T_STARTUP_US + 1000);
 
-    /* Read current configuration */
-    ret = cs1237_read_register(cs1237, CS1237_REG_CONFIG, &config);
-    if (ret < 0)
-        return ret;
+    // /* Read current configuration */
+    // ret = cs1237_read_register(cs1237, CS1237_REG_CONFIG, &config);
+    // if (ret < 0)
+    //     return ret;
 
-    /* Update configuration with default values */
-    config &= ~(CS1237_CONFIG_SPEED_MASK | CS1237_CONFIG_GAIN_MASK |
-               CS1237_CONFIG_CHANNEL_MASK | CS1237_CONFIG_BUF_MASK |
-               CS1237_CONFIG_PGA_MASK);
+    // /* Update configuration with default values */
+    // config &= ~(CS1237_CONFIG_SPEED_MASK | CS1237_CONFIG_GAIN_MASK |
+    //            CS1237_CONFIG_CHANNEL_MASK | CS1237_CONFIG_BUF_MASK |
+    //            CS1237_CONFIG_PGA_MASK);
     
-    config |= (cs1237->speed << 6) | (cs1237->gain << 4) |
+    config = (cs1237->speed << 6) | (cs1237->gain << 4) |
               (cs1237->channel << 2) | (cs1237->buffer_enabled << 1) |
               (cs1237->pga_enabled << 0);
 
@@ -476,10 +476,10 @@ static int cs1237_probe(struct platform_device *pdev)
 }
 
 /* Remove function */
-static int cs1237_remove(struct platform_device *pdev)
+static void cs1237_remove(struct platform_device *pdev)
 {
     /* Resources are automatically freed by the devm_* functions */
-    return 0;
+    return ;
 }
 
 /* Device tree match table */
