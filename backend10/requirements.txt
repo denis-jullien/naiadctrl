@@ -1,0 +1,24 @@
+# Web framework and API
+fastapi>=0.95.0
+uvicorn>=0.21.0
+pydantic>=1.10.7
+
+# Database
+sqlmodel>=0.0.8
+sqlalchemy>=2.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+python-multipart>=0.0.6
+
+# Hardware interface (for Raspberry Pi)
+# RPi.GPIO>=0.7.1  # Uncomment when deploying to Raspberry Pi
+
+# Testing
+pytest>=7.3.1
+httpx>=0.24.0
+
+# pyserial>=3.5
+# rpi.gpio>=0.7.1; platform_system=="Linux"
+# w1thermsensor>=2.0.0; platform_system=="Linux"
+# adafruit-circuitpython-sht4x>=1.0.0; platform_system=="Linux"
