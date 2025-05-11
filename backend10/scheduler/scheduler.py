@@ -132,7 +132,7 @@ class Scheduler:
             else:
                 return None, False
     
-    def _run_sensor(self, sensor):
+    def _run_sensor(self, sensor: Sensor):
         """Run a sensor and record its measurements"""
         try:
             with Session(self.engine) as session:
@@ -166,11 +166,11 @@ class Scheduler:
                     session.add(measurement)
                 
                 session.commit()
-                print(f"Recorded {len(readings)} measurements from sensor {sensor.id}")
+                print(f"Recorded {len(readings)} measurements from sensor {sensor.id} {sensor.name}")
         except Exception as e:
             print(f"Error running sensor {sensor.id}: {e}")
     
-    def _run_controller(self, controller):
+    def _run_controller(self, controller: Controller):
         """Run a controller and record its actions"""
         try:
             with Session(self.engine) as session:

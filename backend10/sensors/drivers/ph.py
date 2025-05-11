@@ -1,8 +1,9 @@
 from typing import Dict, List, Any
 from models.base import MeasurementType
 from sensors.base import BaseSensor, SensorRegistry
+from .cs1237 import CS1237
 
-class SHT41Sensor(BaseSensor):
+class PHSensor(BaseSensor):
     """Driver for SHT41 temperature and humidity sensor"""
     
     def __init__(self, sensor_db):
@@ -13,31 +14,35 @@ class SHT41Sensor(BaseSensor):
         self.i2c_bus = self.config.get('i2c_bus', 1)
         
         # In a real implementation:
-        import board
-        import adafruit_sht4x
-        i2c = board.I2C()
-        self.sensor = adafruit_sht4x.SHT4x(i2c, address=self.i2c_address)
-        # Set to high precision mode by default
-        self.sensor.mode = adafruit_sht4x.Mode.NOHEAT_HIGHPRECISION
+        # import board
+        # import adafruit_sht4x
+        # i2c = board.I2C()
+        # self.sensor = adafruit_sht4x.SHT4x(i2c, address=self.i2c_address)
         
-        # # For simulation purposes
-        # self._simulated_temp = 25.0
-        # self._simulated_humidity = 50.0
+        # For simulation purposes
+        self._simulated_temp = 25.0
+        self._simulated_humidity = 50.0
+
+        sck_pin = self.config.get('sck_pin', 11)
+        data_read_pin = self.config.get('data_read_pin', 18)
+        data_write_pin = self.config.get('data_write_pin', 13)
+
+        self.adc = CS1237(sck_pin, data_read_pin, data_write_pin)
     
     def read(self) -> List[Dict[str, Any]]:
         """Read temperature and humidity from the SHT41 sensor"""
         try:
             # In a real implementation:
-            temperature, humidity = self.sensor.measurements
+            # temperature, humidity = self.sensor.measurements
             
-            # # For simulation purposes
-            # temperature = self._simulated_temp
-            # humidity = self._simulated_humidity
+            # For simulation purposes
+            temperature = self._simulated_temp
+            humidity = self._simulated_humidity
             
-            # # Simulate some variation
-            # import random
-            # temperature += random.uniform(-0.5, 0.5)
-            # humidity += random.uniform(-2, 2)
+            # Simulate some variation
+            import random
+            temperature += random.uniform(-0.5, 0.5)
+            humidity += random.uniform(-2, 2)
             
             # Apply calibration
             calibrated_temp = self.apply_calibration(MeasurementType.TEMPERATURE, temperature)
@@ -63,4 +68,4 @@ class SHT41Sensor(BaseSensor):
             return []
 
 # Register the driver
-SensorRegistry.register('sht41', SHT41Sensor)
+SensorRegistry.register('ph', PHSensor)

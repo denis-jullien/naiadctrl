@@ -12,28 +12,28 @@ class DS18B20Sensor(BaseSensor):
         self.device_id = self.config.get('device_id', None)
         
         # In a real implementation:
-        # from w1thermsensor import W1ThermSensor
-        # if self.device_id:
-        #     self.sensor = W1ThermSensor(sensor_id=self.device_id)
-        # else:
-        #     # Use the first available sensor
-        #     self.sensor = W1ThermSensor()
+        from w1thermsensor import W1ThermSensor
+        if self.device_id:
+            self.sensor = W1ThermSensor(sensor_id=self.device_id)
+        else:
+            # Use the first available sensor
+            self.sensor = W1ThermSensor()
         
-        # For simulation purposes
-        self._simulated_temp = 22.5
+        # # For simulation purposes
+        # self._simulated_temp = 22.5
     
     def read(self) -> List[Dict[str, Any]]:
         """Read temperature from the DS18B20 sensor"""
         try:
             # In a real implementation:
-            # temperature = self.sensor.get_temperature()
+            temperature = self.sensor.get_temperature()
             
-            # For simulation purposes
-            temperature = self._simulated_temp
+            # # For simulation purposes
+            # temperature = self._simulated_temp
             
-            # Simulate some variation
-            import random
-            temperature += random.uniform(-0.2, 0.2)
+            # # Simulate some variation
+            # import random
+            # temperature += random.uniform(-0.2, 0.2)
             
             # Apply calibration
             calibrated_temp = self.apply_calibration(MeasurementType.TEMPERATURE, temperature)

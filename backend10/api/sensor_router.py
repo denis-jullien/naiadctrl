@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import json
+from pydantic import BaseModel as PydanticBaseModel
 
 from models.base import Sensor, Measurement, MeasurementType
 from sensors.base import SensorRegistry
@@ -13,6 +14,16 @@ router = APIRouter(
     tags=["sensors"],
     responses={404: {"description": "Not found"}},
 )
+
+# Simplified model for sensor creation
+class SensorCreate(PydanticBaseModel):
+    name: str
+    driver: str
+    description: Optional[str] = None
+    update_interval: Optional[int] = 60
+    config: Optional[Dict[str, Any]] = {}
+    calibration_data: Optional[Dict[str, Any]] = {}
+    enabled: Optional[bool] = True
 
 # Dependency to get the database session
 def get_session():
@@ -44,21 +55,22 @@ async def get_sensor(sensor_id: int, session: Session = Depends(get_session)):
     return sensor
 
 @router.post("/", response_model=Sensor)
-async def create_sensor(sensor: Sensor, session: Session = Depends(get_session)):
-    """Create a new sensor"""
-    # # Validate sensor type
-    # if sensor.sensor_type not in SensorType:
-    #     raise HTTPException(status_code=400, detail=f"Invalid sensor type: {sensor.sensor_type}")
-    
+async def create_sensor(sensor_data: SensorCreate, session: Session = Depends(get_session)):
+    """Create a new sensor with simplified input"""
     # Validate driver
-    if sensor.driver not in SensorRegistry.get_available_drivers():
-        raise HTTPException(status_code=400, detail=f"Invalid driver: {sensor.driver}")
+    if sensor_data.driver not in SensorRegistry.get_available_drivers():
+        raise HTTPException(status_code=400, detail=f"Invalid driver: {sensor_data.driver}")
     
-    # Convert dict to JSON string if needed
-    if isinstance(sensor.config, dict):
-        sensor.config = json.dumps(sensor.config)
-    if isinstance(sensor.calibration_data, dict):
-        sensor.calibration_data = json.dumps(sensor.calibration_data)
+    # Create a new Sensor instance with the provided data
+    sensor = Sensor(
+        name=sensor_data.name,
+        driver=sensor_data.driver,
+        description=sensor_data.description,
+        update_interval=sensor_data.update_interval,
+        enabled=sensor_data.enabled,
+        config=json.dumps(sensor_data.config),
+        calibration_data=json.dumps(sensor_data.calibration_data)
+    )
     
     session.add(sensor)
     session.commit()
