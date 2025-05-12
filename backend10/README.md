@@ -20,14 +20,19 @@ pip install -r requirements.txt
 
 ## PI Configuration
 
-Add this to config.txt: 
+1. Add this to config.txt: 
 ```
 # Temperature sensor 1-Wire
 dtoverlay=w1-gpio,gpiopin=17
-# SHT40 on i2c
+# SHT41 on i2c
 dtparam=i2c_arm=on
 #dtoverlay=i2c-sensor,sht4x
 ```
+
+2. Ensure that /etc/modules contains the following line:
+```
+i2c-dev
+```	
 
 ## Running the Application
 
