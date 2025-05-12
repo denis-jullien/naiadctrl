@@ -166,7 +166,7 @@ class Scheduler:
                     session.add(measurement)
                 
                 session.commit()
-                print(f"Recorded {len(readings)} measurements from sensor {sensor.id} {sensor.name}")
+                print(f"Recorded {len(readings)} measurements from sensor {sensor.id} {sensor.name} : {sensor.measurements[-1]}")
         except Exception as e:
             print(f"Error running sensor {sensor.id}: {e}")
     

@@ -1,0 +1,29 @@
+// Overlay for Chipsea CS1237 24-bit ADC
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2835";
+    
+    fragment@0 {
+        target-path = "/";
+        __overlay__ {
+            cs1237_adc: cs1237_adc {
+                compatible = "chipsea,cs1237";
+                status = "okay";
+                
+                /* Define GPIOs: SCK, DOUT, DIN */
+                sck-gpios = <&gpio 11 0>;   /* GPIO 17 as SCK pin */
+                dout-gpios = <&gpio 18 0>;  /* GPIO 27 as DOUT pin */
+                din-gpios = <&gpio 13 0>;   /* GPIO 22 as DIN pin */
+                
+                /* Configuration */
+                chipsea,pga = <0>;      /* PGA = 1 */
+                chipsea,speed = <1>;    /* 40Hz sampling rate */
+                chipsea,channel = <0>;  /* Channel A */
+                chipsea,refo = <0>;     /* Reference output disabled */
+                chipsea,buffer-size = <20>; /* 20 samples buffer size */
+            };
+        };
+    };
+};

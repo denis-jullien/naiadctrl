@@ -17,6 +17,17 @@ A modular Python system for water environment monitoring and control using FastA
 pip install -r requirements.txt
 ```
 
+## PI Configuration
+
+Add this to config.txt: 
+```
+# Temperature sensor 1-Wire
+dtoverlay=w1-gpio,gpiopin=17
+# SHT40 on i2c
+dtparam=i2c_arm=on
+#dtoverlay=i2c-sensor,sht4x
+```
+
 ## Running the Application
 
 ```bash

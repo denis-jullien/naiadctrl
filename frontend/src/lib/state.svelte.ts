@@ -1,5 +1,5 @@
 // API base URL
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = 'http://192.168.10.50:8000/api';
 
 // Maximum number of historical data points to keep
 const MAX_HISTORY_POINTS = 100;
