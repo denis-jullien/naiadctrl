@@ -14,6 +14,7 @@ A modular Python system for water environment monitoring and control using FastA
 ## Installation
 
 ```bash
+sudo apt-get install python3-dev python3-pip git
 pip install -r requirements.txt
 ```
 

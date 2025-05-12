@@ -46,11 +46,17 @@ class Scheduler:
         while self.running:
             try:
                 # Get the next sensor or controller to run
-                next_item, is_sensor = self._get_next_item()
-                
+                next_item, next_time = self._get_next_item()
+
                 if next_item:
+                    print(f"Next item: {next_item.name} ({next_item.id}) at {next_time}")
+
+                    # Sleep until the next item is due to run
+                    sleep_seconds = (next_time - datetime.now()).total_seconds()
+                    time.sleep(max(sleep_seconds, 0.0))
+
                     # Run the sensor or controller
-                    if is_sensor:
+                    if isinstance(next_item, Sensor):
                         self._run_sensor(next_item)
                     else:
                         self._run_controller(next_item)
@@ -83,16 +89,10 @@ class Scheduler:
             next_sensor_time = None
             
             for sensor in sensors:
-                # Get the last measurement for this sensor
-                last_measurement_stmt = select(Measurement).where(
-                    Measurement.sensor_id == sensor.id
-                ).order_by(Measurement.timestamp.desc()).limit(1)
                 
-                last_measurement = session.exec(last_measurement_stmt).first()
-                
-                if last_measurement:
+                if sensor.last_measurement:
                     # Calculate the next run time
-                    next_run = last_measurement.timestamp + timedelta(seconds=sensor.update_interval)
+                    next_run = sensor.last_measurement + timedelta(seconds=sensor.update_interval)
                 else:
                     # No previous measurement, run immediately
                     next_run = datetime.now() - timedelta(seconds=1)
@@ -122,15 +122,15 @@ class Scheduler:
             # Determine whether to run a sensor or controller next
             if next_sensor_time and next_controller_time:
                 if next_sensor_time <= next_controller_time:
-                    return next_sensor, True
+                    return next_sensor, next_sensor_time
                 else:
-                    return next_controller, False
+                    return next_controller, next_controller_time
             elif next_sensor_time:
-                return next_sensor, True
+                return next_sensor, next_sensor_time
             elif next_controller_time:
-                return next_controller, False
+                return next_controller, next_controller_time
             else:
-                return None, False
+                return None, datetime.now()
     
     def _run_sensor(self, sensor: Sensor):
         """Run a sensor and record its measurements"""
@@ -142,6 +142,12 @@ class Scheduler:
                     driver_class = SensorRegistry.get_driver(sensor.driver)
                     if not driver_class:
                         print(f"Error: Driver {sensor.driver} not found for sensor {sensor.id}")
+                        # Update last_measurement even if driver not found
+                        db_sensor = session.get(Sensor, sensor.id)
+                        if db_sensor:
+                            db_sensor.last_measurement = datetime.now()
+                            session.add(db_sensor)
+                            session.commit()
                         return
                     
                     # Create the sensor instance
@@ -149,9 +155,11 @@ class Scheduler:
                 
                 # Get the sensor instance
                 sensor_instance = self.sensor_instances[sensor.id]
-                
+
                 # Read the sensor
                 readings = sensor_instance.read()
+
+                print(f"Recorded {len(readings)} measurements from sensor {sensor.id} {sensor.name} : ")
                 
                 # Record the measurements
                 for reading in readings:
@@ -164,11 +172,30 @@ class Scheduler:
                         sensor_id=sensor.id
                     )
                     session.add(measurement)
+
+                    print(f"\t{reading['type']}: {reading['value']} {reading['unit']} (raw: {reading.get('raw_value')})")
+                
+                # Update the sensor's last_measurement time
+                db_sensor = session.get(Sensor, sensor.id)
+                if db_sensor:
+                    db_sensor.last_measurement = datetime.now()
+                    session.add(db_sensor)
                 
                 session.commit()
-                print(f"Recorded {len(readings)} measurements from sensor {sensor.id} {sensor.name} : {sensor.measurements[-1]}")
+
         except Exception as e:
             print(f"Error running sensor {sensor.id}: {e}")
+            # Update last_measurement even if read() fails
+            try:
+                with Session(self.engine) as session:
+                    db_sensor = session.get(Sensor, sensor.id)
+                    if db_sensor:
+                        db_sensor.last_measurement = datetime.now()
+                        session.add(db_sensor)
+                        session.commit()
+                        print(f"Updated last_measurement for sensor {sensor.id} after error")
+            except Exception as update_error:
+                print(f"Error updating last_measurement for sensor {sensor.id}: {update_error}")
     
     def _run_controller(self, controller: Controller):
         """Run a controller and record its actions"""
@@ -186,6 +213,10 @@ class Scheduler:
                     controller_class = ControllerRegistry.get_controller(controller.controller_type.value)
                     if not controller_class:
                         print(f"Error: Controller type {controller.controller_type} not found for controller {controller.id}")
+                        # Update last_run even if controller type not found
+                        db_controller.last_run = datetime.now()
+                        session.add(db_controller)
+                        session.commit()
                         return
                     
                     # Create the controller instance
@@ -216,3 +247,14 @@ class Scheduler:
                     print(f"No action taken by controller {controller.id}")
         except Exception as e:
             print(f"Error running controller {controller.id}: {e}")
+            # Update last_run even if process() fails
+            try:
+                with Session(self.engine) as session:
+                    db_controller = session.get(Controller, controller.id)
+                    if db_controller:
+                        db_controller.last_run = datetime.now()
+                        session.add(db_controller)
+                        session.commit()
+                        print(f"Updated last_run for controller {controller.id} after error")
+            except Exception as update_error:
+                print(f"Error updating last_run for controller {controller.id}: {update_error}")

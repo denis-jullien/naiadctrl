@@ -1,65 +1,40 @@
 from typing import Dict, List, Any
 from models.base import MeasurementType
 from sensors.base import BaseSensor, SensorRegistry
-from .cs1237 import CS1237
+from ._cs1237 import CS1237
 
 class PHSensor(BaseSensor):
     """Driver for SHT41 temperature and humidity sensor"""
     
     def __init__(self, sensor_db):
         super().__init__(sensor_db)
-        # In a real implementation, we would initialize the hardware here
-        # For example, using Adafruit's CircuitPython library
-        self.i2c_address = self.config.get('i2c_address', 0x44)
-        self.i2c_bus = self.config.get('i2c_bus', 1)
-        
-        # In a real implementation:
-        # import board
-        # import adafruit_sht4x
-        # i2c = board.I2C()
-        # self.sensor = adafruit_sht4x.SHT4x(i2c, address=self.i2c_address)
-        
-        # For simulation purposes
-        self._simulated_temp = 25.0
-        self._simulated_humidity = 50.0
 
+        
         sck_pin = self.config.get('sck_pin', 11)
         data_read_pin = self.config.get('data_read_pin', 18)
         data_write_pin = self.config.get('data_write_pin', 13)
 
+        # Initialize the sensor
         self.adc = CS1237(sck_pin, data_read_pin, data_write_pin)
+
+        self.adc.initialize()
+        self.adc.start()
     
     def read(self) -> List[Dict[str, Any]]:
         """Read temperature and humidity from the SHT41 sensor"""
         try:
-            # In a real implementation:
-            # temperature, humidity = self.sensor.measurements
             
-            # For simulation purposes
-            temperature = self._simulated_temp
-            humidity = self._simulated_humidity
-            
-            # Simulate some variation
-            import random
-            temperature += random.uniform(-0.5, 0.5)
-            humidity += random.uniform(-2, 2)
+            voltage = self.adc.get_averaged_data()
             
             # Apply calibration
-            calibrated_temp = self.apply_calibration(MeasurementType.TEMPERATURE, temperature)
-            calibrated_humidity = self.apply_calibration(MeasurementType.HUMIDITY, humidity)
-            
+            calibrated_ph = self.apply_calibration(MeasurementType.PH, voltage)
+
             return [
                 {
-                    'type': MeasurementType.TEMPERATURE,
-                    'value': calibrated_temp,
-                    'unit': '°C',
-                    'raw_value': temperature
-                },
-                {
-                    'type': MeasurementType.HUMIDITY,
-                    'value': calibrated_humidity,
-                    'unit': '%',
-                    'raw_value': humidity
+                    'type': MeasurementType.PH,
+                    'value': calibrated_ph,
+                    'unit': '',
+                    'raw_value': voltage
                 }
             ]
         except Exception as e:

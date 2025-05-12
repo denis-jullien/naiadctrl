@@ -15,8 +15,8 @@ python-multipart>=0.0.6
 # RPi.GPIO>=0.7.1  # Uncomment when deploying to Raspberry Pi
 
 # Testing
-pytest>=7.3.1
-httpx>=0.24.0
+# pytest>=7.3.1
+# httpx>=0.24.0
 
 # pyserial>=3.5
 rpi.gpio>=0.7.1; platform_system=="Linux"

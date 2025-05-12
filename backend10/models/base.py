@@ -56,6 +56,7 @@ class Sensor(BaseModel, table=True):
     driver: str
     config: str = Field(default="{}", sa_column=Column(String, default="{}"))
     update_interval: int = Field(default=60)  # seconds
+    last_measurement : Optional[datetime] = None
     calibration_data: str = Field(default="{}", sa_column=Column(String, default="{}"))
     
     # Relationships

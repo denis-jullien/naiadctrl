@@ -81,20 +81,20 @@ class CS1237:
             f"CS1237 initialized with pins: SCK={sck_pin}, DATA_READ={data_read_pin}, DATA_WRITE={data_write_pin}"
         )
 
-    async def initialize(self):
+    def initialize(self):
         """Initialize the CS1237 and configure it"""
         # Power up the CS1237
         GPIO.output(self.sck_pin, GPIO.HIGH)
-        await asyncio.sleep(0.001)
+        time.sleep(0.001)
         GPIO.output(self.sck_pin, GPIO.LOW)
 
         # Wait for data ready (DOUT goes low)
-        timeout = asyncio.get_event_loop().time() + 0.5  # 500ms timeout
+        timeout = time.time() + 0.5  # 500ms timeout
         while GPIO.input(self.data_read_pin) == GPIO.HIGH:
-            if asyncio.get_event_loop().time() > timeout:
+            if time.time() > timeout:
                 print("CS1237 initialization timeout!")
                 return False
-            await asyncio.sleep(0.001)
+            time.sleep(0.001)
 
         # Configure the CS1237
         config_byte = (
