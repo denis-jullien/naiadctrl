@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import json
 
-from models.base import Controller, ControllerType, Sensor, SensorControllerLink
+from models.base import Controller, ControllerType, Sensor, SensorControllerLink, ControllerCreate
 from controllers.base import ControllerRegistry
 from database import engine
 
@@ -44,22 +44,28 @@ async def get_controller(controller_id: int, session: Session = Depends(get_sess
     return controller
 
 @router.post("/", response_model=Controller)
-async def create_controller(controller: Controller, session: Session = Depends(get_session)):
+async def create_controller(controller_create: ControllerCreate, session: Session = Depends(get_session)):
     """Create a new controller"""
     # Validate controller type
-    if controller.controller_type not in ControllerType:
-        raise HTTPException(status_code=400, detail=f"Invalid controller type: {controller.controller_type}")
+    if controller_create.controller_type not in ControllerType:
+        raise HTTPException(status_code=400, detail=f"Invalid controller type: {controller_create.controller_type}")
     
     # Validate that the controller type is available in the registry
-    if controller.controller_type.value not in ControllerRegistry.get_available_controllers():
+    if controller_create.controller_type.value not in ControllerRegistry.get_available_controllers():
         raise HTTPException(
             status_code=400, 
-            detail=f"Controller implementation not available: {controller.controller_type}"
+            detail=f"Controller implementation not available: {controller_create.controller_type}"
         )
     
-    # Convert dict to JSON string if needed
-    if isinstance(controller.config, dict):
-        controller.config = json.dumps(controller.config)
+    # Create a new Controller instance from the ControllerCreate data
+    controller = Controller(
+        name=controller_create.name,
+        description=controller_create.description,
+        controller_type=controller_create.controller_type,
+        config=json.dumps(controller_create.config),
+        update_interval=controller_create.update_interval,
+        enabled=controller_create.enabled
+    )
     
     session.add(controller)
     session.commit()
@@ -69,7 +75,7 @@ async def create_controller(controller: Controller, session: Session = Depends(g
 @router.put("/{controller_id}", response_model=Controller)
 async def update_controller(
     controller_id: int, 
-    controller_update: Controller, 
+    controller_update: ControllerCreate, 
     session: Session = Depends(get_session)
 ):
     """Update a controller"""
@@ -78,14 +84,13 @@ async def update_controller(
         raise HTTPException(status_code=404, detail="Controller not found")
     
     # Update controller attributes
-    controller_data = controller_update.dict(exclude_unset=True)
-    
-    # Handle JSON fields
-    if 'config' in controller_data and isinstance(controller_data['config'], dict):
-        controller_data['config'] = json.dumps(controller_data['config'])
-    
-    for key, value in controller_data.items():
-        setattr(db_controller, key, value)
+    db_controller.name = controller_update.name
+    db_controller.description = controller_update.description
+    db_controller.controller_type = controller_update.controller_type
+    db_controller.config = json.dumps(controller_update.config)
+    db_controller.update_interval = controller_update.update_interval
+    db_controller.enabled = controller_update.enabled
+    db_controller.updated_at = datetime.now()
     
     session.add(db_controller)
     session.commit()

@@ -81,6 +81,15 @@ class Measurement(SQLModel, table=True):
     # Relationships
     sensor: Optional[Sensor] = Relationship(back_populates="measurements")
 
+# Controller Create model (for API requests)
+class ControllerCreate(SQLModel):
+    name: str
+    description: Optional[str] = None
+    controller_type: ControllerType
+    config: Dict[str, Any] = Field(default={})
+    update_interval: int = Field(default=60)  # seconds
+    enabled: bool = Field(default=True)
+
 # Controller model
 class Controller(BaseModel, table=True):
     controller_type: ControllerType
