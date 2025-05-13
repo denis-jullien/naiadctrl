@@ -3,6 +3,72 @@
   import { Button } from "$lib/components/ui/button/index.js";
   import { api } from "$lib/api";
 
+  import { Chart } from 'svelte-echarts'
+
+  import { init } from 'echarts'
+  import type { EChartsOption } from 'echarts'
+
+  const randomData = (length = 1, multiplier = 1) =>
+    Array.from({ length }, () => Math.floor(Math.random() * multiplier))
+
+  let data = $state(randomData(7, 100))
+  let data2 = $state(randomData(7, 100))
+
+  let options = $derived({
+    // title: {
+    //   text: 'ECharts Example',
+    // },
+    xAxis: {
+      type: 'category',
+      data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    },
+    yAxis: [
+      {
+        name: 'Flow(m³/s)',
+        type: 'value'
+      },
+      {
+        name: 'Rainfall(mm)',
+        // nameLocation: 'start',
+        alignTicks: true,
+        type: 'value',
+        // inverse: true
+      }
+    ],
+    dataZoom: [
+    {
+      type: 'slider',
+      show: true,
+      xAxisIndex: [0],
+      // start: 1,
+      // end: 35
+    },
+    {
+      type: 'inside',
+      xAxisIndex: [0],
+      // start: 1,
+      // end: 35
+    },
+  ],
+    series: [
+      {
+        type: 'line',
+        data: data,
+      },
+      {
+        type: 'line',
+        yAxisIndex: 1,
+        data: data2,
+      },
+    ],
+  } as EChartsOption)
+
+  const updateData = () => {
+    console.log('updateData')
+    data = randomData(7, 100)
+  }
+
+
   // State using Svelte 5 runes
   let systemStatus = $state<Record<string, any> | null>(null);
   let sensors = $state<any[]>([]);
@@ -13,6 +79,7 @@
 
   // Fetch data on component mount
   onMount(async () => {
+    // const interval = setInterval(updateData, 1000)
     try {
       // Load all data in parallel
       const [statusData, sensorsData, controllersData, measurementsData] = await Promise.all([
@@ -40,35 +107,13 @@
     return new Date(dateString).toLocaleString();
   }
 
-  // Toggle scheduler
-  async function toggleScheduler() {
-    try {
-      if (systemStatus?.scheduler_running) {
-        await api.system.stopScheduler();
-      } else {
-        await api.system.startScheduler();
-      }
-      // Refresh status
-      systemStatus = await api.system.getStatus();
-    } catch (err) {
-      console.error('Failed to toggle scheduler:', err);
-      error = 'Failed to toggle scheduler. Please try again.';
-    }
-  }
 </script>
 
 <div class="space-y-6">
   <div class="flex justify-between items-center">
     <h1 class="text-3xl font-bold tracking-tight">Hydroponic System Dashboard</h1>
     
-    {#if !loading && systemStatus}
-      <Button 
-        variant={systemStatus?.scheduler_running ? "destructive" : "default"}
-        on:click={toggleScheduler}
-      >
-        {systemStatus?.scheduler_running ? "Stop Scheduler" : "Start Scheduler"}
-      </Button>
-    {/if}
+
   </div>
 
   {#if loading}
@@ -85,10 +130,10 @@
       <div class="bg-card text-card-foreground rounded-lg shadow-sm p-6">
         <h3 class="font-medium">System Status</h3>
         <div class="text-3xl font-bold mt-2">
-          {systemStatus?.scheduler_running ? "Running" : "Stopped"}
+          {systemStatus?.scheduler_status?.running  ? "Running" : "Stopped"}
         </div>
         <p class="text-muted-foreground text-sm mt-2">
-          Last update: {formatDate(systemStatus?.last_update || null)}
+          Last update: {formatDate(systemStatus?.timestamp || null)}
         </p>
       </div>
 
@@ -118,6 +163,10 @@
           From {sensors.filter(s => s.last_measurement).length} sensors
         </p>
       </div>
+    </div>
+
+    <div class="h-[300px] rounded-lg shadow-sm">
+      <Chart {init} {options} />
     </div>
 
     <!-- Recent Measurements -->
