@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
-  import { api, type Controller, type Sensor, type ControllerType } from "$lib/api";
+  import { api, type Controller, type Sensor, type ControllerType, type ControllerCreate } from "$lib/api";
 
   // State using Svelte 5 runes
   let controllers = $state<Controller[]>([]);
@@ -16,13 +16,13 @@
   let controllerSensors = $state<Sensor[]>([]);
 
   // New controller form state
-  let newController = $state<Partial<Controller>>({
+  let newController = $state<ControllerCreate>({
     name: '',
-    controller_type: undefined,
+    controller_type: undefined as unknown as ControllerType,
     description: '',
     update_interval: 60,
     enabled: true,
-    config: '{}'
+    config: {}
   });
 
   // Fetch data on component mount
@@ -73,7 +73,7 @@
   // Create new controller
   async function createController() {
     try {
-      const created = await api.controllers.create(newController as Controller);
+      const created = await api.controllers.create(newController);
       controllers = [...controllers, created];
       toggleAddForm(); // Close form after successful creation
     } catch (err) {
@@ -97,7 +97,19 @@
     if (!editingController || !editingController.id) return;
     
     try {
-      const updated = await api.controllers.update(editingController.id, editingController);
+      // Convert Controller to ControllerCreate for the API call
+      const controllerUpdate: ControllerCreate = {
+        name: editingController.name,
+        controller_type: editingController.controller_type,
+        description: editingController.description,
+        update_interval: editingController.update_interval,
+        enabled: editingController.enabled,
+        config: typeof editingController.config === 'string' 
+          ? JSON.parse(editingController.config) 
+          : editingController.config
+      };
+      
+      const updated = await api.controllers.update(editingController.id, controllerUpdate);
       controllers = controllers.map(c => c.id === updated.id ? updated : c);
       editingController = null; // Close edit form
     } catch (err) {
@@ -128,10 +140,19 @@
     if (!controller.id) return;
     
     try {
-      const updated = await api.controllers.update(controller.id, {
-        ...controller,
-        enabled: !controller.enabled
-      });
+      // Convert Controller to ControllerCreate for the API call
+      const controllerUpdate: ControllerCreate = {
+        name: controller.name,
+        controller_type: controller.controller_type,
+        description: controller.description,
+        update_interval: controller.update_interval,
+        enabled: !controller.enabled,  // Toggle the enabled state
+        config: typeof controller.config === 'string' 
+          ? JSON.parse(controller.config) 
+          : controller.config
+      };
+      
+      const updated = await api.controllers.update(controller.id, controllerUpdate);
       controllers = controllers.map(c => c.id === updated.id ? updated : c);
     } catch (err) {
       console.error('Failed to update controller:', err);

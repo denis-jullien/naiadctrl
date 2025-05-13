@@ -69,6 +69,15 @@ export interface Controller {
   last_run?: string | null;
 }
 
+export interface ControllerCreate {
+  name: string;
+  controller_type: ControllerType;
+  description?: string | null;
+  config?: Record<string, any>;
+  update_interval?: number;
+  enabled?: boolean;
+}
+
 export type ControllerType = 'ph_controller' | 'ec_controller' | 'pump_timer' | 'temp_pump_timer';
 
 // API functions
@@ -110,11 +119,11 @@ export const api = {
   controllers: {
     getAll: () => fetchApi<Controller[]>('/api/controllers/'),
     get: (id: number) => fetchApi<Controller>(`/api/controllers/${id}`),
-    create: (controller: Controller) => fetchApi<Controller>('/api/controllers/', {
+    create: (controller: ControllerCreate) => fetchApi<Controller>('/api/controllers/', {
       method: 'POST',
       body: JSON.stringify(controller),
     }),
-    update: (id: number, controller: Controller) => fetchApi<Controller>(`/api/controllers/${id}`, {
+    update: (id: number, controller: ControllerCreate) => fetchApi<Controller>(`/api/controllers/${id}`, {
       method: 'PUT',
       body: JSON.stringify(controller),
     }),
@@ -146,11 +155,11 @@ export const api = {
     }),
     getRecentMeasurements: (hours?: number) => {
       const query = hours ? `?hours=${hours}` : '';
-      return fetchApi<Record<string, any>[]>(`/api/system/measurements/recent${query}`);
+      return fetchApi<any[]>('/api/system/measurements/recent' + query);
     },
     getRecentActions: (hours?: number) => {
       const query = hours ? `?hours=${hours}` : '';
-      return fetchApi<Record<string, any>[]>(`/api/system/actions/recent${query}`);
+      return fetchApi<any[]>('/api/system/actions/recent' + query);
     },
   },
 };
