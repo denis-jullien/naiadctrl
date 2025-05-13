@@ -74,6 +74,8 @@ class PumpTimerController(BaseController):
         # For example:
         # import RPi.GPIO as GPIO
         # GPIO.output(self.output_pin, GPIO.HIGH if action_type == 'pump_on' else GPIO.LOW)
+
+        print(f"Pump {action_type} - {reason}")
         
         return {
             'action_type': action_type,

@@ -234,6 +234,7 @@ class Scheduler:
                 # Process the controller
                 print(f"Processing controller {controller.id}")
                 result = controller_instance.process()
+                print(f"Result of processing controller {controller.id}: {result}")
                 
                 # Record the action if there was one
                 if result:
