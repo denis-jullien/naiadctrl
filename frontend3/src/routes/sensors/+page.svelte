@@ -134,7 +134,7 @@
   <div class="flex justify-between items-center">
     <h1 class="text-3xl font-bold tracking-tight">Sensors</h1>
     
-    <Button on:click={toggleAddForm}>
+    <Button onclick={toggleAddForm}>
       {showAddForm ? 'Cancel' : 'Add Sensor'}
     </Button>
   </div>
@@ -142,7 +142,7 @@
   {#if error}
     <div class="bg-destructive/15 p-4 rounded-md">
       <p class="text-destructive">{error}</p>
-      <Button variant="outline" class="mt-2" on:click={() => error = null}>Dismiss</Button>
+      <Button variant="outline" class="mt-2" onclick={() => error = null}>Dismiss</Button>
     </div>
   {/if}
 
@@ -211,9 +211,9 @@
       </div>
       
       <div class="mt-6 flex justify-end space-x-2">
-        <Button variant="outline" on:click={toggleAddForm}>Cancel</Button>
+        <Button variant="outline" onclick={toggleAddForm}>Cancel</Button>
         <Button 
-          on:click={createSensor}
+          onclick={createSensor}
           disabled={!newSensor.name || !newSensor.driver}
         >
           Create Sensor
@@ -280,7 +280,7 @@
                       </div>
                       
                       <div class="space-y-2">
-                        <label class="text-sm font-medium">Update Interval (seconds)</label>
+                        <label class="text-sm font-medium" for="edit_update_interval">Update Interval (seconds)</label>
                         <input 
                           type="number" 
                           bind:value={editingSensor.update_interval} 
@@ -302,8 +302,8 @@
                     </div>
                     
                     <div class="mt-4 flex justify-end space-x-2">
-                      <Button variant="outline" on:click={cancelEdit}>Cancel</Button>
-                      <Button on:click={updateSensor}>Save Changes</Button>
+                      <Button variant="outline" onclick={cancelEdit}>Cancel</Button>
+                      <Button onclick={updateSensor}>Save Changes</Button>
                     </div>
                   </td>
                 </tr>
@@ -319,15 +319,15 @@
                   <td class="p-3">{formatDate(sensor.last_measurement)}</td>
                   <td class="p-3">
                     <div class="flex space-x-2">
-                      <Button variant="outline" size="sm" on:click={() => startEdit(sensor)}>Edit</Button>
+                      <Button variant="outline" size="sm" onclick={() => startEdit(sensor)}>Edit</Button>
                       <Button 
                         variant={sensor.enabled ? "destructive" : "default"} 
                         size="sm"
-                        on:click={() => toggleSensorEnabled(sensor)}
+                        onclick={() => toggleSensorEnabled(sensor)}
                       >
                         {sensor.enabled ? 'Disable' : 'Enable'}
                       </Button>
-                      <Button variant="destructive" size="sm" on:click={() => deleteSensor(sensor.id || 0)}>Delete</Button>
+                      <Button variant="destructive" size="sm" onclick={() => deleteSensor(sensor.id || 0)}>Delete</Button>
                     </div>
                   </td>
                 </tr>

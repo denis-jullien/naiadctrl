@@ -191,18 +191,19 @@
   }
 
   // Get available sensors (not already assigned to selected controller)
-  $derived.by(() => {
+  const availableSensors = $derived.by(() => {
     if (!selectedControllerId || !controllerSensors) return [];
     const controllerSensorIds = controllerSensors.map(s => s.id);
     return sensors.filter(s => !controllerSensorIds.includes(s.id));
   });
+  
 </script>
 
 <div class="space-y-6">
   <div class="flex justify-between items-center">
     <h1 class="text-3xl font-bold tracking-tight">Controllers</h1>
     
-    <Button on:click={toggleAddForm}>
+    <Button onclick={toggleAddForm}>
       {showAddForm ? 'Cancel' : 'Add Controller'}
     </Button>
   </div>
@@ -210,7 +211,7 @@
   {#if error}
     <div class="bg-destructive/15 p-4 rounded-md">
       <p class="text-destructive">{error}</p>
-      <Button variant="outline" class="mt-2" on:click={() => error = null}>Dismiss</Button>
+      <Button variant="outline" class="mt-2" onclick={() => error = null}>Dismiss</Button>
     </div>
   {/if}
 
@@ -279,9 +280,9 @@
       </div>
       
       <div class="mt-6 flex justify-end space-x-2">
-        <Button variant="outline" on:click={toggleAddForm}>Cancel</Button>
+        <Button variant="outline" onclick={toggleAddForm}>Cancel</Button>
         <Button 
-          on:click={createController}
+          onclick={createController}
           disabled={!newController.name || !newController.controller_type}
         >
           Create Controller
@@ -364,14 +365,14 @@
                   </div>
                   
                   <div class="mt-4 flex justify-end space-x-2">
-                    <Button variant="outline" on:click={cancelEdit}>Cancel</Button>
-                    <Button on:click={updateController}>Save Changes</Button>
+                    <Button variant="outline" onclick={cancelEdit}>Cancel</Button>
+                    <Button onclick={updateController}>Save Changes</Button>
                   </div>
                 </div>
               {:else}
                 <div 
                   class="p-4 hover:bg-muted/50 cursor-pointer {selectedControllerId === controller.id ? 'bg-muted/50' : ''}"
-                  on:click={() => loadControllerSensors(controller.id || 0)}
+                  onclick={() => loadControllerSensors(controller.id || 0)}
                 >
                   <div class="flex justify-between items-start">
                     <div>
@@ -390,25 +391,25 @@
                       </div>
                     </div>
                     <div class="flex space-x-2">
-                      <Button variant="outline" size="sm" on:click={(e) => { e.stopPropagation(); startEdit(controller); }}>Edit</Button>
+                      <Button variant="outline" size="sm" onclick={(e) => { e.stopPropagation(); startEdit(controller); }}>Edit</Button>
                       <Button 
                         variant="outline" 
                         size="sm"
-                        on:click={(e) => { e.stopPropagation(); processController(controller.id || 0); }}
+                        onclick={(e) => { e.stopPropagation(); processController(controller.id || 0); }}
                       >
                         Run Now
                       </Button>
                       <Button 
                         variant={controller.enabled ? "destructive" : "default"} 
                         size="sm"
-                        on:click={(e) => { e.stopPropagation(); toggleControllerEnabled(controller); }}
+                        onclick={(e) => { e.stopPropagation(); toggleControllerEnabled(controller); }}
                       >
                         {controller.enabled ? 'Disable' : 'Enable'}
                       </Button>
                       <Button 
                         variant="destructive" 
                         size="sm" 
-                        on:click={(e) => { e.stopPropagation(); deleteController(controller.id || 0); }}
+                        onclick={(e) => { e.stopPropagation(); deleteController(controller.id || 0); }}
                       >
                         Delete
                       </Button>
@@ -451,7 +452,7 @@
                     <Button 
                       variant="outline" 
                       size="sm"
-                      on:click={() => removeSensorFromController(sensor.id || 0)}
+                      onclick={() => removeSensorFromController(sensor.id || 0)}
                     >
                       Remove
                     </Button>
@@ -461,11 +462,11 @@
             {/if}
 
             <h3 class="font-medium mb-2 mt-6">Available Sensors</h3>
-            {#if $derived.length === 0}
+            {#if availableSensors.length === 0}
               <p class="text-sm text-muted-foreground">No available sensors to add</p>
             {:else}
               <div class="space-y-2">
-                {#each $derived as sensor}
+                {#each availableSensors as sensor}
                   <div class="flex justify-between items-center p-2 border rounded-md">
                     <div>
                       <p class="font-medium">{sensor.name}</p>
@@ -473,7 +474,7 @@
                     </div>
                     <Button 
                       size="sm"
-                      on:click={() => addSensorToController(sensor.id || 0)}
+                      onclick={() => addSensorToController(sensor.id || 0)}
                     >
                       Add
                     </Button>

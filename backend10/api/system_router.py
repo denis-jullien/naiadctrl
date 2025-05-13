@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 import json
@@ -23,31 +23,51 @@ def get_session():
 async def get_system_status(session: Session = Depends(get_session)):
     """Get the overall system status"""
     # Count sensors and controllers
-    sensor_count = session.exec(select(Sensor)).count()
-    controller_count = session.exec(select(Controller)).count()
+    sensor_count = session.exec(select(func.count()).select_from(Sensor)).one()
+    controller_count = session.exec(select(func.count()).select_from(Controller)).one()
     
-    # Get the latest measurements
-    latest_measurements_query = """
-    SELECT m1.*
-    FROM measurement m1
-    JOIN (
-        SELECT sensor_id, MAX(timestamp) as max_timestamp
-        FROM measurement
-        GROUP BY sensor_id
-    ) m2 ON m1.sensor_id = m2.sensor_id AND m1.timestamp = m2.max_timestamp
-    """
+    # Get the latest measurements for each sensor
+    # First, get a subquery with the max timestamp for each sensor
+    subquery_measurements = (
+        select(
+            Measurement.sensor_id,
+            func.max(Measurement.timestamp).label("max_timestamp")
+        )
+        .group_by(Measurement.sensor_id)
+        .subquery()
+    )
+    
+    # Then join with the measurements table to get the full records
+    latest_measurements_query = (
+        select(Measurement)
+        .join(
+            subquery_measurements,
+            (Measurement.sensor_id == subquery_measurements.c.sensor_id) & 
+            (Measurement.timestamp == subquery_measurements.c.max_timestamp)
+        )
+    )
     latest_measurements = session.exec(latest_measurements_query).all()
     
-    # Get the latest controller actions
-    latest_actions_query = """
-    SELECT a1.*
-    FROM controlaction a1
-    JOIN (
-        SELECT controller_id, MAX(timestamp) as max_timestamp
-        FROM controlaction
-        GROUP BY controller_id
-    ) a2 ON a1.controller_id = a2.controller_id AND a1.timestamp = a2.max_timestamp
-    """
+    # Get the latest controller actions for each controller
+    # First, get a subquery with the max timestamp for each controller
+    subquery_actions = (
+        select(
+            ControlAction.controller_id,
+            func.max(ControlAction.timestamp).label("max_timestamp")
+        )
+        .group_by(ControlAction.controller_id)
+        .subquery()
+    )
+    
+    # Then join with the controlaction table to get the full records
+    latest_actions_query = (
+        select(ControlAction)
+        .join(
+            subquery_actions,
+            (ControlAction.controller_id == subquery_actions.c.controller_id) & 
+            (ControlAction.timestamp == subquery_actions.c.max_timestamp)
+        )
+    )
     latest_actions = session.exec(latest_actions_query).all()
     
     # Format the response
@@ -55,11 +75,11 @@ async def get_system_status(session: Session = Depends(get_session)):
         "timestamp": datetime.now().isoformat(),
         "sensors": {
             "count": sensor_count,
-            "enabled": session.exec(select(Sensor).where(Sensor.enabled == True)).count(),
+            "enabled": session.exec(select(func.count()).select_from(Sensor).where(Sensor.enabled == True)).one(),
         },
         "controllers": {
             "count": controller_count,
-            "enabled": session.exec(select(Controller).where(Controller.enabled == True)).count(),
+            "enabled": session.exec(select(func.count()).select_from(Controller).where(Controller.enabled == True)).one(),
         },
         "latest_measurements": [
             {

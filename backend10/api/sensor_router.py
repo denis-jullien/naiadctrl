@@ -78,7 +78,7 @@ async def create_sensor(sensor_data: SensorCreate, session: Session = Depends(ge
     return sensor
 
 @router.put("/{sensor_id}", response_model=Sensor)
-async def update_sensor(sensor_id: int, sensor_update: Sensor, session: Session = Depends(get_session)):
+async def update_sensor(sensor_id: int, sensor_update: SensorCreate, session: Session = Depends(get_session)):
     """Update a sensor"""
     db_sensor = session.get(Sensor, sensor_id)
     if not db_sensor:
@@ -93,6 +93,7 @@ async def update_sensor(sensor_id: int, sensor_update: Sensor, session: Session 
     if 'calibration_data' in sensor_data and isinstance(sensor_data['calibration_data'], dict):
         sensor_data['calibration_data'] = json.dumps(sensor_data['calibration_data'])
     
+    # Update fields
     for key, value in sensor_data.items():
         setattr(db_sensor, key, value)
     

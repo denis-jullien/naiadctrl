@@ -74,7 +74,7 @@
     {#if !loading && systemStatus}
       <Button 
         variant={systemStatus?.scheduler_running ? "destructive" : "default"}
-        on:click={toggleScheduler}
+        onclick={toggleScheduler}
       >
         {systemStatus?.scheduler_running ? "Stop Scheduler" : "Start Scheduler"}
       </Button>
@@ -84,7 +84,7 @@
   {#if error}
     <div class="bg-destructive/15 p-4 rounded-md">
       <p class="text-destructive">{error}</p>
-      <Button variant="outline" class="mt-2" on:click={() => error = null}>Dismiss</Button>
+      <Button variant="outline" class="mt-2" onclick={() => error = null}>Dismiss</Button>
     </div>
   {/if}
 
@@ -136,19 +136,19 @@
     <div class="flex justify-end space-x-2 mt-6">
       <Button 
         variant={timeRange === 6 ? "default" : "outline"} 
-        on:click={() => updateTimeRange(6)}
+        onclick={() => updateTimeRange(6)}
       >
         6 Hours
       </Button>
       <Button 
         variant={timeRange === 24 ? "default" : "outline"} 
-        on:click={() => updateTimeRange(24)}
+        onclick={() => updateTimeRange(24)}
       >
         24 Hours
       </Button>
       <Button 
         variant={timeRange === 72 ? "default" : "outline"} 
-        on:click={() => updateTimeRange(72)}
+        onclick={() => updateTimeRange(72)}
       >
         3 Days
       </Button>
