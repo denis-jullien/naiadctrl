@@ -91,7 +91,22 @@
     if (!editingSensor || !editingSensor.id) return;
     
     try {
-      const updated = await api.sensors.update(editingSensor.id, editingSensor);
+      // Convert Sensor to SensorCreate for the API call
+      const sensorUpdate: SensorCreate = {
+        name: editingSensor.name,
+        driver: editingSensor.driver,
+        description: editingSensor.description,
+        update_interval: editingSensor.update_interval,
+        enabled: editingSensor.enabled,
+        config: typeof editingSensor.config === 'string' 
+          ? JSON.parse(editingSensor.config) 
+          : editingSensor.config,
+        calibration_data: typeof editingSensor.calibration_data === 'string'
+          ? JSON.parse(editingSensor.calibration_data)
+          : editingSensor.calibration_data
+      };
+      
+      const updated = await api.sensors.update(editingSensor.id, sensorUpdate);
       sensors = sensors.map(s => s.id === updated.id ? updated : s);
       editingSensor = null; // Close edit form
     } catch (err) {
@@ -118,10 +133,22 @@
     if (!sensor.id) return;
     
     try {
-      const updated = await api.sensors.update(sensor.id, {
-        ...sensor,
-        enabled: !sensor.enabled
-      });
+      // Convert Sensor to SensorCreate for the API call
+      const sensorUpdate: SensorCreate = {
+        name: sensor.name,
+        driver: sensor.driver,
+        description: sensor.description,
+        update_interval: sensor.update_interval,
+        enabled: !sensor.enabled,  // Toggle the enabled state
+        config: typeof sensor.config === 'string' 
+          ? JSON.parse(sensor.config) 
+          : sensor.config,
+        calibration_data: typeof sensor.calibration_data === 'string'
+          ? JSON.parse(sensor.calibration_data)
+          : sensor.calibration_data
+      };
+      
+      const updated = await api.sensors.update(sensor.id, sensorUpdate);
       sensors = sensors.map(s => s.id === updated.id ? updated : s);
     } catch (err) {
       console.error('Failed to update sensor:', err);

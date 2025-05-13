@@ -81,7 +81,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(sensor),
     }),
-    update: (id: number, sensor: Sensor) => fetchApi<Sensor>(`/api/sensors/${id}`, {
+    update: (id: number, sensor: SensorCreate) => fetchApi<Sensor>(`/api/sensors/${id}`, {
       method: 'PUT',
       body: JSON.stringify(sensor),
     }),
