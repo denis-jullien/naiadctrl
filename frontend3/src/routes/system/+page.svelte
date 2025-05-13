@@ -181,7 +181,7 @@
               <tbody>
                 {#each recentMeasurements.slice(0, 10) as measurement}
                   <tr class="border-b hover:bg-muted/50">
-                    <td class="p-3">{measurement.sensor_name || 'Unknown'}</td>
+                    <td class="p-3">{measurement.sensor_id || 'Unknown'}</td>
                     <td class="p-3">{measurement.measurement_type}</td>
                     <td class="p-3">{measurement.value} {measurement.unit}</td>
                     <td class="p-3">{formatDate(measurement.timestamp)}</td>
@@ -215,7 +215,7 @@
               <tbody>
                 {#each recentActions.slice(0, 10) as action}
                   <tr class="border-b hover:bg-muted/50">
-                    <td class="p-3">{action.controller_name || 'Unknown'}</td>
+                    <td class="p-3">{action.controller_id || 'Unknown'}</td>
                     <td class="p-3">{action.action_type}</td>
                     <td class="p-3">{action.details || '-'}</td>
                     <td class="p-3">{formatDate(action.timestamp)}</td>

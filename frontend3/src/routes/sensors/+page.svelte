@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { Button } from "$lib/components/ui/button";
-  import { api, type Sensor, type SensorCreate } from "$lib/api";
+  import { api, type Sensor, type SensorCreate, type Measurement } from "$lib/api";
 
   // State using Svelte 5 runes
   let sensors = $state<Sensor[]>([]);
@@ -10,6 +10,10 @@
   let error = $state<string | null>(null);
   let showAddForm = $state(false);
   let editingSensor = $state<Sensor | null>(null);
+  let latestMeasurements = $state<Record<number, Measurement | null>>({});
+  let refreshInterval = $state(10); // Refresh interval in seconds
+  let refreshTimer: number | null = $state(null);
+  let lastRefreshTime = $state<Date | null>(null);
 
   // New sensor form state
   let newSensor = $state<SensorCreate>({
@@ -24,7 +28,43 @@
 
   // Fetch data on component mount
   onMount(async () => {
+    await loadData();
+    
+    // Set up refresh timer
+    startRefreshTimer();
+  });
+  
+  // Clean up on component destroy
+  onDestroy(() => {
+    console.log('the component is being destroyed');
+    stopRefreshTimer();
+  });
+  
+  // Start the refresh timer
+  function startRefreshTimer() {
+    stopRefreshTimer(); // Clear any existing timer
+    refreshTimer = window.setInterval(async () => {
+      if (!editingSensor) { // Don't refresh while editing
+        await loadData(false); // Pass false to indicate this is a background refresh
+      }
+    }, refreshInterval * 1000);
+  }
+  
+  // Stop the refresh timer
+  function stopRefreshTimer() {
+    if (refreshTimer !== null) {
+      window.clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+  }
+  
+  // Load all data
+  async function loadData(showLoadingState = true) {
     try {
+      if (showLoadingState) {
+        loading = true;
+      }
+      
       // Load sensors and available drivers in parallel
       const [sensorsData, driversData] = await Promise.all([
         api.sensors.getAll(),
@@ -33,18 +73,51 @@
 
       sensors = sensorsData;
       availableDrivers = driversData;
+      
+      // Fetch latest measurement for each sensor
+      await fetchLatestMeasurements();
+      
+      // Update last refresh time
+      lastRefreshTime = new Date();
     } catch (err) {
       console.error('Failed to load sensors data:', err);
-      error = 'Failed to load sensors data. Please check your connection to the backend server.';
+      if (showLoadingState) {
+        error = 'Failed to load sensors data. Please check your connection to the backend server.';
+      }
     } finally {
-      loading = false;
+      if (showLoadingState) {
+        loading = false;
+      }
     }
-  });
+  }
+
+  // Fetch latest measurement for each sensor
+  async function fetchLatestMeasurements() {
+    for (const sensor of sensors) {
+      if (sensor.id && sensor.last_measurement) {
+        try {
+          const measurements = await api.sensors.getMeasurements(sensor.id, 1);
+          if (measurements && measurements.length > 0) {
+            latestMeasurements[sensor.id] = measurements[0];
+          }
+        } catch (err) {
+          console.error(`Failed to fetch measurements for sensor ${sensor.id}:`, err);
+        }
+      }
+    }
+  }
 
   // Helper function to format date
   function formatDate(dateString: string | null): string {
     if (!dateString) return 'Never';
     return new Date(dateString).toLocaleString();
+  }
+
+  // Helper function to format measurement value with unit
+  function formatMeasurement(sensorId: number | null): string {
+    if (!sensorId || !latestMeasurements[sensorId]) return 'N/A';
+    const measurement = latestMeasurements[sensorId];
+    return `${measurement.value.toFixed(2)} ${measurement.unit}`;
   }
 
   // Toggle add form visibility
@@ -70,6 +143,7 @@
       const created = await api.sensors.create(newSensor);
       sensors = [...sensors, created];
       toggleAddForm(); // Close form after successful creation
+      await loadData(); // Refresh data after creating a sensor
     } catch (err) {
       console.error('Failed to create sensor:', err);
       error = 'Failed to create sensor. Please try again.';
@@ -109,6 +183,7 @@
       const updated = await api.sensors.update(editingSensor.id, sensorUpdate);
       sensors = sensors.map(s => s.id === updated.id ? updated : s);
       editingSensor = null; // Close edit form
+      await loadData(); // Refresh data after updating a sensor
     } catch (err) {
       console.error('Failed to update sensor:', err);
       error = 'Failed to update sensor. Please try again.';
@@ -122,6 +197,7 @@
     try {
       await api.sensors.delete(id);
       sensors = sensors.filter(s => s.id !== id);
+      await loadData(); // Refresh data after deleting a sensor
     } catch (err) {
       console.error('Failed to delete sensor:', err);
       error = 'Failed to delete sensor. Please try again.';
@@ -155,16 +231,33 @@
       error = 'Failed to update sensor. Please try again.';
     }
   }
+
+  // Manual refresh function
+  async function refreshData() {
+    await loadData();
+  }
 </script>
 
 <div class="space-y-6">
   <div class="flex justify-between items-center">
     <h1 class="text-3xl font-bold tracking-tight">Sensors</h1>
     
-    <Button onclick={toggleAddForm}>
-      {showAddForm ? 'Cancel' : 'Add Sensor'}
-    </Button>
+    <div class="flex space-x-2">
+      <div class="flex items-center space-x-2">
+        <span class="text-sm text-muted-foreground">
+          {lastRefreshTime ? `Last updated: ${lastRefreshTime.toLocaleTimeString()}` : ''}
+        </span>
+        <Button variant="outline" size="sm" onclick={refreshData}>
+          Refresh
+        </Button>
+      </div>
+      <Button onclick={toggleAddForm}>
+        {showAddForm ? 'Cancel' : 'Add Sensor'}
+      </Button>
+    </div>
   </div>
+
+
 
   {#if error}
     <div class="bg-destructive/15 p-4 rounded-md">
@@ -267,6 +360,7 @@
               <th class="text-left p-3 font-medium">Driver</th>
               <th class="text-left p-3 font-medium">Status</th>
               <th class="text-left p-3 font-medium">Last Measurement</th>
+              <th class="text-left p-3 font-medium">Latest Value</th>
               <th class="text-left p-3 font-medium">Actions</th>
             </tr>
           </thead>
@@ -344,6 +438,7 @@
                     </span>
                   </td>
                   <td class="p-3">{formatDate(sensor.last_measurement)}</td>
+                  <td class="p-3">{formatMeasurement(sensor.id)}</td>
                   <td class="p-3">
                     <div class="flex space-x-2">
                       <Button variant="outline" size="sm" onclick={() => startEdit(sensor)}>Edit</Button>

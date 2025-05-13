@@ -8,11 +8,75 @@
   import { init } from 'echarts'
   import type { EChartsOption } from 'echarts'
 
-  const randomData = (length = 1, multiplier = 1) =>
-    Array.from({ length }, () => Math.floor(Math.random() * multiplier))
+  // State using Svelte 5 runes
+  let systemStatus = $state<Record<string, any> | null>(null);
+  let sensors = $state<any[]>([]);
+  let controllers = $state<any[]>([]);
+  let recentMeasurements = $state<any[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
-  let data = $state(randomData(7, 100))
-  let data2 = $state(randomData(7, 100))
+    
+  // Process measurements for chart display
+  function processChartData() {
+    if (!recentMeasurements || recentMeasurements.length === 0) 
+      return {
+        timestamps: [] as string[],
+        values: {} as Record<string, number[]>
+      };
+    
+    // Group measurements by type
+    const measurementsByType: Record<string, any[]> = {};
+    const timestamps: string[] = [];
+    const timestampSet = new Set<string>();
+    
+    // First collect all unique timestamps and group measurements
+    recentMeasurements.forEach(m => {
+      if (!measurementsByType[m.measurement_type]) {
+        measurementsByType[m.measurement_type] = [];
+      }
+      measurementsByType[m.measurement_type].push(m);
+      
+      // Format timestamp for display (just time part)
+      const date = new Date(m.timestamp);
+      const timeStr = date.toLocaleTimeString();
+      timestampSet.add(timeStr);
+    });
+    
+    // Convert to sorted array
+    const sortedTimestamps = Array.from(timestampSet).sort((a, b) => {
+      return new Date('1970/01/01 ' + a).getTime() - new Date('1970/01/01 ' + b).getTime();
+    });
+    
+    // Prepare data for chart
+    const values: Record<string, number[]> = {};
+    
+    // Initialize arrays for each measurement type
+    Object.keys(measurementsByType).forEach(type => {
+      values[type] = Array(sortedTimestamps.length).fill(null);
+    });
+    
+    // Fill in values at corresponding timestamp positions
+    Object.keys(measurementsByType).forEach(type => {
+      measurementsByType[type].forEach(m => {
+        const date = new Date(m.timestamp);
+        const timeStr = date.toLocaleTimeString();
+        const index = sortedTimestamps.indexOf(timeStr);
+        if (index !== -1) {
+          values[type][index] = m.value;
+        }
+      });
+    });
+    
+    return {
+      timestamps: sortedTimestamps,
+      values: values
+    };
+  }
+
+  // Chart data processing
+  let chartData = $derived(processChartData());
+  
 
   let options = $derived({
     // title: {
@@ -20,7 +84,7 @@
     // },
     xAxis: {
       type: 'category',
-      data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      data: chartData.timestamps,
     },
     yAxis: [
       {
@@ -50,32 +114,15 @@
       // end: 35
     },
   ],
-    series: [
-      {
+    series: Object.keys(chartData.values).map((type, index) => {
+      return {
+        name: type,
         type: 'line',
-        data: data,
-      },
-      {
-        type: 'line',
-        yAxisIndex: 1,
-        data: data2,
-      },
-    ],
+        data: chartData.values[type],
+        yAxisIndex: index % 2  // Alternate between left and right y-axis
+      };
+    })
   } as EChartsOption)
-
-  const updateData = () => {
-    console.log('updateData')
-    data = randomData(7, 100)
-  }
-
-
-  // State using Svelte 5 runes
-  let systemStatus = $state<Record<string, any> | null>(null);
-  let sensors = $state<any[]>([]);
-  let controllers = $state<any[]>([]);
-  let recentMeasurements = $state<any[]>([]);
-  let loading = $state(true);
-  let error = $state<string | null>(null);
 
   // Fetch data on component mount
   onMount(async () => {
