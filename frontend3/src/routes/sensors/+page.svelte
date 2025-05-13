@@ -44,6 +44,7 @@
   function startRefreshTimer() {
     stopRefreshTimer(); // Clear any existing timer
     refreshTimer = window.setInterval(async () => {
+      console.log('Refreshing data...');
       if (!editingSensor) { // Don't refresh while editing
         await loadData(false); // Pass false to indicate this is a background refresh
       }

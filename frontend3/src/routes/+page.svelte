@@ -250,22 +250,6 @@
       {/if}
     </div>
 
-    <!-- Quick Links -->
-    <div class="grid gap-4 md:grid-cols-3 mt-6">
-      <a href="/sensors" class="bg-card text-card-foreground rounded-lg shadow-sm p-6 hover:bg-accent/50 transition-colors">
-        <h3 class="font-medium">Manage Sensors</h3>
-        <p class="text-muted-foreground text-sm mt-2">View, add, and configure sensors</p>
-      </a>
-      
-      <a href="/controllers" class="bg-card text-card-foreground rounded-lg shadow-sm p-6 hover:bg-accent/50 transition-colors">
-        <h3 class="font-medium">Manage Controllers</h3>
-        <p class="text-muted-foreground text-sm mt-2">Configure automation controllers</p>
-      </a>
-      
-      <a href="/system" class="bg-card text-card-foreground rounded-lg shadow-sm p-6 hover:bg-accent/50 transition-colors">
-        <h3 class="font-medium">System Settings</h3>
-        <p class="text-muted-foreground text-sm mt-2">View system status and settings</p>
-      </a>
-    </div>
+
   {/if}
 </div>

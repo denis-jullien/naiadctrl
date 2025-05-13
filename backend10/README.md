@@ -14,13 +14,18 @@ A modular Python system for water environment monitoring and control using FastA
 ## Installation
 
 ```bash
-sudo apt-get install python3-dev python3-pip git
+sudo apt update 
+sudo apt install python3-dev python3-pip git
+git clone https://github.com/denis-jullien/naiadctrl.git
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ## PI Configuration
 
 1. Add this to config.txt: 
+sudo nano /boot/firmware/config.txt
 ```
 # Temperature sensor 1-Wire
 dtoverlay=w1-gpio,gpiopin=17
