@@ -298,6 +298,18 @@
             <span class="text-sm font-medium">Enabled</span>
           </label>
         </div>
+        
+        <div class="space-y-2 md:col-span-2">
+          <label class="text-sm font-medium" for="config">Configuration</label>
+          <textarea 
+            id="config"
+            bind:value={newController.config} 
+            class="w-full p-2 border rounded-md font-mono text-sm"
+            placeholder={"{}"}
+            rows="6"
+          ></textarea>
+          <p class="text-xs text-muted-foreground">Enter JSON configuration for this controller</p>
+        </div>
       </div>
       
       <div class="mt-6 flex justify-end space-x-2">
@@ -382,6 +394,17 @@
                         />
                         <span class="text-sm font-medium">Enabled</span>
                       </label>
+                    </div>
+                    
+                    <div class="space-y-2 md:col-span-2">
+                      <label class="text-sm font-medium">Configuration</label>
+                      <textarea 
+                        bind:value={editingController.config} 
+                        class="w-full p-2 border rounded-md font-mono text-sm"
+                        rows="6"
+                        placeholder={"{}"}
+                      ></textarea>
+                      <p class="text-xs text-muted-foreground">Enter JSON configuration for this controller</p>
                     </div>
                   </div>
                   
