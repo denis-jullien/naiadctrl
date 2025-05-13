@@ -154,8 +154,11 @@ class TempPumpTimerController(BaseController):
         """Create an action dictionary"""
         # In a real implementation, we would activate the output pin
         # For example:
-        # import RPi.GPIO as GPIO
-        # GPIO.output(self.output_pin, GPIO.HIGH if action_type == 'pump_on' else GPIO.LOW)
+        if self.output_pin is not None:
+            import RPi.GPIO as GPIO
+            GPIO.output(self.output_pin, GPIO.HIGH if action_type == 'pump_on' else GPIO.LOW)
+        else:
+            print(f"Missing output_pin configuration for {self.name}")
         
         return {
             'action_type': action_type,

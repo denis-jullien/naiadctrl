@@ -1,7 +1,9 @@
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
-from models.base import MeasurementType
+from models.base import MeasurementType, Measurement, Sensor
 from controllers.base import BaseController, ControllerRegistry
+from sqlmodel import Session, select
+from database import engine
 
 class PhController(BaseController):
     """Controller for managing pH levels by dosing pH- solution"""
@@ -20,11 +22,16 @@ class PhController(BaseController):
     
     def process(self) -> Optional[Dict[str, Any]]:
         """Process pH sensor data and control pH- dosing"""
+
+        print("Processing pH controller...")
+        
         # Get the latest pH measurement from the associated sensors
         latest_ph = self._get_latest_ph()
         
         if latest_ph is None:
             return None  # No pH data available
+
+        print(f"Latest pH: {latest_ph}")
         
         # Check if pH is too high and needs adjustment
         if latest_ph > self.target_ph + self.tolerance:
@@ -53,19 +60,42 @@ class PhController(BaseController):
         return None
     
     def _get_latest_ph(self) -> Optional[float]:
-        """Get the latest pH measurement from the associated sensors"""
-        # In a real implementation, we would query the database for the latest measurement
-        # For now, we'll simulate this by checking if any of our sensors measure pH
+        """Get the latest pH measurement from any associated sensors"""
+
+        print("Getting latest pH measurement...")
+        # Create a new session to query the database
+        with Session(engine) as session:
+
+            print("Querying database for latest pH measurement...")
+            # Get the sensor IDs from the controller's sensors
+            sensor_ids = [sensor.id for sensor in self.sensors]
+            
+            if not sensor_ids:
+                print("No sensors associated with this controller")
+                return None
+            
+            print(f"Looking for pH measurements from sensors: {sensor_ids}")
+            
+            # Query for the latest pH measurement from any of the associated sensors
+            latest_measurement = session.exec(
+                select(Measurement)
+                .where(
+                    Measurement.sensor_id.in_(sensor_ids),
+                    Measurement.measurement_type == MeasurementType.PH
+                )
+                .order_by(Measurement.timestamp.desc())
+                .limit(1)
+            ).first()
         
-        for sensor in self.sensors:
-            # Check if this sensor measures pH
-            if sensor.sensor_type.value == 'ph_sensor':
-                # In a real implementation, we would query the database
-                # For simulation, we'll return a random pH value
-                import random
-                return random.uniform(5.5, 7.5)
-        
-        return None
+            print(f"Latest measurement found: {latest_measurement}")
+            
+            if latest_measurement:
+                return latest_measurement.value
+            
+            print("No pH measurements found, returning simulated value")
+            # If no measurement found, return a random value for simulation
+            import random
+            return random.uniform(5.5, 7.5)
 
 # Register the controller
 ControllerRegistry.register('ph_controller', PhController)

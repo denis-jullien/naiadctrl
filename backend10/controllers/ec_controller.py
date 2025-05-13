@@ -59,7 +59,7 @@ class EcController(BaseController):
         
         for sensor in self.sensors:
             # Check if this sensor measures EC
-            if sensor.sensor_type.value == 'ec_sensor':
+            if sensor.driver == 'ec':
                 # In a real implementation, we would query the database
                 # For simulation, we'll return a random EC value
                 import random

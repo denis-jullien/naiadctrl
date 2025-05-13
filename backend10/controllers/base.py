@@ -13,7 +13,8 @@ class BaseController(ABC):
     def __init__(self, controller_db: Controller):
         """Initialize the controller with its database model"""
         self.controller_db = controller_db
-        self.config = controller_db.config
+        # Parse the config JSON string to a dictionary
+        self.config = json.loads(controller_db.config) if controller_db.config else {}
         self.sensors = controller_db.sensors
     
     @abstractmethod

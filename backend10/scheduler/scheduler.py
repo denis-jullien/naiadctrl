@@ -206,6 +206,8 @@ class Scheduler:
                 if not db_controller:
                     print(f"Error: Controller {controller.id} not found in database")
                     return
+    
+                print(f"Running controller {controller.id}")
                 
                 # Get the controller instance or create it if it doesn't exist
                 if controller.id not in self.controller_instances:
@@ -218,14 +220,19 @@ class Scheduler:
                         session.add(db_controller)
                         session.commit()
                         return
+
+                    print(f"Controller class found: {controller_class}")
                     
                     # Create the controller instance
                     self.controller_instances[controller.id] = controller_class(db_controller)
+
+                print(f"Controller instance created: {self.controller_instances[controller.id]}")
                 
                 # Get the controller instance
                 controller_instance = self.controller_instances[controller.id]
                 
                 # Process the controller
+                print(f"Processing controller {controller.id}")
                 result = controller_instance.process()
                 
                 # Record the action if there was one

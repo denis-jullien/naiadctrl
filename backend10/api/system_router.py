@@ -130,7 +130,7 @@ async def get_recent_measurements(hours: int = 24, session: Session = Depends(ge
     start_time = datetime.now() - timedelta(hours=hours)
     
     # Query for measurements after the start time
-    query = select(Measurement).where(Measurement.timestamp >= start_time)
+    query = select(Measurement).where(Measurement.timestamp >= start_time).order_by(Measurement.timestamp.desc())
     measurements = session.exec(query).all()
     
     # Format the response
