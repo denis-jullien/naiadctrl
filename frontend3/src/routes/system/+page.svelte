@@ -30,6 +30,12 @@
       systemStatus = statusData;
       recentMeasurements = measurementsData;
       recentActions = actionsData;
+
+      // console.log('Loaded system data:', {
+      //   status: statusData,
+      //   measurements: measurementsData,
+      //   actions: actionsData
+      // })
     } catch (err) {
       console.error('Failed to load system data:', err);
       error = 'Failed to load system data. Please check your connection to the backend server.';
@@ -47,7 +53,7 @@
   // Toggle scheduler
   async function toggleScheduler() {
     try {
-      if (systemStatus?.scheduler_running) {
+      if (systemStatus?.scheduler_status?.running) {
         await api.system.stopScheduler();
       } else {
         await api.system.startScheduler();
@@ -73,10 +79,10 @@
     
     {#if !loading && systemStatus}
       <Button 
-        variant={systemStatus?.scheduler_running ? "destructive" : "default"}
+        variant={systemStatus?.scheduler_status?.running ? "destructive" : "default"}
         onclick={toggleScheduler}
       >
-        {systemStatus?.scheduler_running ? "Stop Scheduler" : "Start Scheduler"}
+        {systemStatus?.scheduler_status?.running ? "Stop Scheduler" : "Start Scheduler"}
       </Button>
     {/if}
   </div>
@@ -101,14 +107,14 @@
         <div>
           <h3 class="font-medium">Scheduler Status</h3>
           <p class="text-2xl font-bold mt-1">
-            {systemStatus?.scheduler_running ? "Running" : "Stopped"}
+            {systemStatus?.scheduler_status.running ? "Running" : "Stopped"}
           </p>
         </div>
         
         <div>
           <h3 class="font-medium">Last Update</h3>
           <p class="text-2xl font-bold mt-1">
-            {formatDate(systemStatus?.last_update || null)}
+            {formatDate(systemStatus?.timestamp || null)}
           </p>
         </div>
         
