@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
-from models.base import MeasurementType, Measurement, Sensor
+from models.base import MeasurementType, Measurement, Sensor, Controller
 from controllers.base import BaseController, ControllerRegistry
 from sqlmodel import Session, select
 from database import engine
@@ -10,6 +10,9 @@ class PhController(BaseController):
     
     def __init__(self, controller_db):
         super().__init__(controller_db)
+        # Store the controller ID to avoid session issues later
+        self.controller_id = controller_db.id if hasattr(controller_db, 'id') else None
+        
         # Configuration parameters with defaults
         self.target_ph = self.config.get('target_ph', 6.0)
         self.tolerance = self.config.get('tolerance', 0.2)
@@ -65,10 +68,29 @@ class PhController(BaseController):
         print("Getting latest pH measurement...")
         # Create a new session to query the database
         with Session(engine) as session:
-
             print("Querying database for latest pH measurement...")
-            # Get the sensor IDs from the controller's sensors
-            sensor_ids = [sensor.id for sensor in self.sensors]
+            
+            # Use the stored controller ID
+            controller_id = self.controller_id
+            if controller_id is None:
+                print("No controller ID available")
+                return None
+
+            print(f"Controller ID: {controller_id}")
+        
+            
+            # Query for sensors directly using the link table
+            from sqlmodel import select
+            from models.base import SensorControllerLink
+            
+            # Get sensor IDs directly from the link table
+            sensor_links = session.exec(
+                select(SensorControllerLink).where(SensorControllerLink.controller_id == controller_id)
+            ).all()
+
+            print(f"Sensor links found: ")
+            
+            sensor_ids = [link.sensor_id for link in sensor_links]
             
             if not sensor_ids:
                 print("No sensors associated with this controller")
