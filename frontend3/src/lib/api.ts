@@ -132,6 +132,7 @@ export const api = {
     }),
     getTypes: () => fetchApi<string[]>('/api/controllers/types'),
     getAvailableControllers: () => fetchApi<string[]>('/api/controllers/available-controllers'),
+    getSchema: (controllerType: string) => fetchApi<Record<string, any>>(`/api/controllers/schema/${controllerType}`),
     getSensors: (id: number) => fetchApi<Sensor[]>(`/api/controllers/${id}/sensors`),
     addSensor: (controllerId: number, sensorId: number) => fetchApi<any>(`/api/controllers/${controllerId}/sensors/${sensorId}`, {
       method: 'POST',

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import json
 
 from models.base import Controller, ControllerType, Sensor, SensorControllerLink, ControllerCreate
+from models.controller_schemas import validate_controller_config, get_controller_schema
 from controllers.base import ControllerRegistry
 from database import engine
 
@@ -29,6 +30,14 @@ async def get_controllers(session: Session = Depends(get_session)):
 async def get_controller_types():
     """Get all available controller types"""
     return [t.value for t in ControllerType]
+
+@router.get("/schema/{controller_type}")
+async def get_controller_config_schema(controller_type: str):
+    """Get the configuration schema for a specific controller type"""
+    if controller_type not in [t.value for t in ControllerType]:
+        raise HTTPException(status_code=400, detail=f"Invalid controller type: {controller_type}")
+    
+    return get_controller_schema(controller_type)
 
 @router.get("/available-controllers", response_model=List[str])
 async def get_available_controllers():
@@ -57,12 +66,21 @@ async def create_controller(controller_create: ControllerCreate, session: Sessio
             detail=f"Controller implementation not available: {controller_create.controller_type}"
         )
     
+    # Validate the configuration against the schema
+    try:
+        validated_config = validate_controller_config(
+            controller_create.controller_type.value, 
+            controller_create.config
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid configuration: {str(e)}")
+    
     # Create a new Controller instance from the ControllerCreate data
     controller = Controller(
         name=controller_create.name,
         description=controller_create.description,
         controller_type=controller_create.controller_type,
-        config=json.dumps(controller_create.config),
+        config=json.dumps(validated_config),
         update_interval=controller_create.update_interval,
         enabled=controller_create.enabled
     )
@@ -83,11 +101,20 @@ async def update_controller(
     if not db_controller:
         raise HTTPException(status_code=404, detail="Controller not found")
     
+    # Validate the configuration against the schema
+    try:
+        validated_config = validate_controller_config(
+            controller_update.controller_type.value, 
+            controller_update.config
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid configuration: {str(e)}")
+    
     # Update controller attributes
     db_controller.name = controller_update.name
     db_controller.description = controller_update.description
     db_controller.controller_type = controller_update.controller_type
-    db_controller.config = json.dumps(controller_update.config)
+    db_controller.config = json.dumps(validated_config)
     db_controller.update_interval = controller_update.update_interval
     db_controller.enabled = controller_update.enabled
     db_controller.updated_at = datetime.now()
@@ -201,6 +228,9 @@ async def process_controller(controller_id: int, session: Session = Depends(get_
     session.commit()
     
     if result:
-        return result
+        # Record the action if there is a result
+        action = controller.record_action(result['action_type'], result)
+        return {"message": "Controller processed", "action": action, "state": result}
     else:
-        return {"message": "No action taken"}
+        return {"message": "No action taken", "state": None}
+
