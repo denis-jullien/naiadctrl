@@ -73,3 +73,5 @@
     @apply bg-background text-foreground;
   }
 }
+
+@source "../node_modules/@sjsf/shadcn4-theme/dist";
