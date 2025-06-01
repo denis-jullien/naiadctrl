@@ -1,5 +1,6 @@
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
+from models.controller_schemas import EcControllerConfig
 from models.base import MeasurementType
 from controllers.base import BaseController, ControllerRegistry
 
@@ -9,11 +10,12 @@ class EcController(BaseController):
     def __init__(self, controller_db):
         super().__init__(controller_db)
         # Configuration parameters with defaults
-        self.target_ec = self.config.get('target_ec', 1.5)  # mS/cm
-        self.tolerance = self.config.get('tolerance', 0.2)  # mS/cm
-        self.dose_time = self.config.get('dose_time', 1.0)  # seconds
-        self.min_dose_interval = self.config.get('min_dose_interval', 300)  # seconds
-        self.output_pin = self.config.get('output_pin', None)
+        # self.target_ec = self.config.get('target_ec', 1.5)  # mS/cm
+        # self.tolerance = self.config.get('tolerance', 0.2)  # mS/cm
+        # self.dose_time = self.config.get('dose_time', 1.0)  # seconds
+        # self.min_dose_interval = self.config.get('min_dose_interval', 300)  # seconds
+        # self.output_pin = self.config.get('output_pin', None)
+        self.config_obj = EcControllerConfig(**self.config)
         
         # State variables
         self.last_dose_time = None
@@ -27,10 +29,10 @@ class EcController(BaseController):
             return None  # No EC data available
         
         # Check if EC is too low and needs adjustment
-        if latest_ec < self.target_ec - self.tolerance:
+        if latest_ec < self.config_obj.target_ec - self.config_obj.tolerance:
             # Check if enough time has passed since the last dose
             if (self.last_dose_time is None or 
-                datetime.now() - self.last_dose_time > timedelta(seconds=self.min_dose_interval)):
+                datetime.now() - self.last_dose_time > timedelta(seconds=self.config_obj.min_dose_interval)):
                 
                 # In a real implementation, we would activate the output pin
                 # For example:
@@ -44,8 +46,8 @@ class EcController(BaseController):
                 return {
                     'action_type': 'ec_dose',
                     'current_ec': latest_ec,
-                    'target_ec': self.target_ec,
-                    'dose_time': self.dose_time,
+                    'target_ec': self.config_obj.target_ec,
+                    'dose_time': self.config_obj.dose_time,
                     'timestamp': datetime.now().isoformat()
                 }
         

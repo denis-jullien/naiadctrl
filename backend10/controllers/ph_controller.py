@@ -4,6 +4,7 @@ from models.base import MeasurementType, Measurement, Sensor, Controller
 from controllers.base import BaseController, ControllerRegistry
 from sqlmodel import Session, select
 from database import engine
+from models.controller_schemas import PhControllerConfig
 
 class PhController(BaseController):
     """Controller for managing pH levels by dosing pH- solution"""
@@ -14,11 +15,12 @@ class PhController(BaseController):
         self.controller_id = controller_db.id if hasattr(controller_db, 'id') else None
         
         # Configuration parameters with defaults
-        self.target_ph = self.config.get('target_ph', 6.0)
-        self.tolerance = self.config.get('tolerance', 0.2)
-        self.dose_time = self.config.get('dose_time', 1.0)  # seconds
-        self.min_dose_interval = self.config.get('min_dose_interval', 300)  # seconds
-        self.output_pin = self.config.get('output_pin', None)
+        # self.target_ph = self.config.get('target_ph', 6.0)
+        # self.tolerance = self.config.get('tolerance', 0.2)
+        # self.dose_time = self.config.get('dose_time', 1.0)  # seconds
+        # self.min_dose_interval = self.config.get('min_dose_interval', 300)  # seconds
+        # self.output_pin = self.config.get('output_pin', None)
+        self.config_obj = PhControllerConfig(**self.config)
         
         # State variables
         self.last_dose_time = None
@@ -37,10 +39,10 @@ class PhController(BaseController):
         print(f"Latest pH: {latest_ph}")
         
         # Check if pH is too high and needs adjustment
-        if latest_ph > self.target_ph + self.tolerance:
+        if latest_ph > self.config_obj.target_ph + self.config_obj.tolerance:
             # Check if enough time has passed since the last dose
             if (self.last_dose_time is None or 
-                datetime.now() - self.last_dose_time > timedelta(seconds=self.min_dose_interval)):
+                datetime.now() - self.last_dose_time > timedelta(seconds=self.config_obj.min_dose_interval)):
                 
                 # In a real implementation, we would activate the output pin
                 # For example:
@@ -54,8 +56,8 @@ class PhController(BaseController):
                 return {
                     'action_type': 'ph_dose',
                     'current_ph': latest_ph,
-                    'target_ph': self.target_ph,
-                    'dose_time': self.dose_time,
+                    'target_ph': self.config_obj.target_ph,
+                    'dose_time': self.config_obj.dose_time,
                     'timestamp': datetime.now().isoformat()
                 }
         

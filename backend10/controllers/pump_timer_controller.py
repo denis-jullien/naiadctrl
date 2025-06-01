@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from controllers.base import BaseController, ControllerRegistry
+from models.controller_schemas import PumpTimerConfig, TempPumpTimerConfig
 
 class PumpTimerController(BaseController):
     """Controller for managing water pumps based on time schedules"""
@@ -8,11 +9,12 @@ class PumpTimerController(BaseController):
     def __init__(self, controller_db):
         super().__init__(controller_db)
         # Configuration parameters with defaults
-        self.on_duration = self.config.get('on_duration', 300)  # seconds
-        self.off_duration = self.config.get('off_duration', 1800)  # seconds
-        self.output_pin = self.config.get('output_pin', None)
-        self.start_time = self.config.get('start_time', '08:00')  # HH:MM format
-        self.end_time = self.config.get('end_time', '20:00')  # HH:MM format
+        # self.on_duration = self.config.get('on_duration', 300)  # seconds
+        # self.off_duration = self.config.get('off_duration', 1800)  # seconds
+        # self.output_pin = self.config.get('output_pin', None)
+        # self.start_time = self.config.get('start_time', '08:00')  # HH:MM format
+        # self.end_time = self.config.get('end_time', '20:00')  # HH:MM format
+        self.config_obj = PumpTimerConfig(**self.config)
         
         # State variables
         self.last_state_change = None
@@ -40,12 +42,12 @@ class PumpTimerController(BaseController):
         
         # Check if it's time to change state
         if self.current_state:  # Currently ON
-            if time_since_change >= self.on_duration:
+            if time_since_change >= self.config_obj.on_duration:
                 self.current_state = False
                 self.last_state_change = current_time
                 return self._create_action('pump_off', 'On duration completed')
         else:  # Currently OFF
-            if time_since_change >= self.off_duration:
+            if time_since_change >= self.config_obj.off_duration:
                 self.current_state = True
                 self.last_state_change = current_time
                 return self._create_action('pump_on', 'Off duration completed')
@@ -56,8 +58,8 @@ class PumpTimerController(BaseController):
     def _is_within_active_hours(self, current_time: datetime) -> bool:
         """Check if the current time is within the active hours"""
         # Parse start and end times
-        start_hour, start_minute = map(int, self.start_time.split(':'))
-        end_hour, end_minute = map(int, self.end_time.split(':'))
+        start_hour, start_minute = map(int, self.config_obj.start_time.split(':'))
+        end_hour, end_minute = map(int, self.config_obj.end_time.split(':'))
         
         # Create datetime objects for today's start and end times
         start_datetime = current_time.replace(
@@ -93,11 +95,12 @@ class TempPumpTimerController(BaseController):
     def __init__(self, controller_db):
         super().__init__(controller_db)
         # Configuration parameters with defaults
-        self.min_temp = self.config.get('min_temp', 18.0)  # °C
-        self.max_temp = self.config.get('max_temp', 28.0)  # °C
-        self.on_duration = self.config.get('on_duration', 300)  # seconds
-        self.off_duration = self.config.get('off_duration', 1800)  # seconds
-        self.output_pin = self.config.get('output_pin', None)
+        # self.min_temp = self.config.get('min_temp', 18.0)  # °C
+        # self.max_temp = self.config.get('max_temp', 28.0)  # °C
+        # self.on_duration = self.config.get('on_duration', 300)  # seconds
+        # self.off_duration = self.config.get('off_duration', 1800)  # seconds
+        # self.output_pin = self.config.get('output_pin', None)
+        self.config_obj = TempPumpTimerConfig(**self.config)
         
         # State variables
         self.last_state_change = None
@@ -112,14 +115,14 @@ class TempPumpTimerController(BaseController):
             return None  # No temperature data available
         
         # Check if temperature is outside acceptable range
-        temp_too_high = latest_temp > self.max_temp
+        temp_too_high = latest_temp > self.config_obj.max_temp
         
         # Initialize state if this is the first run
         if self.last_state_change is None:
             self.last_state_change = current_time
             self.current_state = temp_too_high  # Turn on if temp is too high
             if self.current_state:
-                return self._create_action('pump_on', f'Initial start - Temperature {latest_temp}°C above max {self.max_temp}°C')
+                return self._create_action('pump_on', f'Initial start - Temperature {latest_temp}°C above max {self.config_obj.max_temp}°C')
             return None
         
         # Calculate time since last state change
@@ -127,15 +130,15 @@ class TempPumpTimerController(BaseController):
         
         # Check if it's time to change state based on temperature and timing
         if self.current_state:  # Currently ON
-            if not temp_too_high or time_since_change >= self.on_duration:
+            if not temp_too_high or time_since_change >= self.config_obj.on_duration:
                 self.current_state = False
                 self.last_state_change = current_time
                 return self._create_action('pump_off', f'Temperature {latest_temp}°C normal or on duration completed')
         else:  # Currently OFF
-            if temp_too_high and time_since_change >= self.off_duration:
+            if temp_too_high and time_since_change >= self.config_obj.off_duration:
                 self.current_state = True
                 self.last_state_change = current_time
-                return self._create_action('pump_on', f'Temperature {latest_temp}°C above max {self.max_temp}°C')
+                return self._create_action('pump_on', f'Temperature {latest_temp}°C above max {self.config_obj.max_temp}°C')
         
         # No state change needed
         return None
@@ -144,7 +147,7 @@ class TempPumpTimerController(BaseController):
         """Get the latest temperature measurement from the associated sensors"""
         for sensor in self.sensors:
             # Check if this sensor measures temperature
-            if sensor.sensor_type.value in ['sht41', 'ds18b20']:
+            if sensor.config_obj.sensor_type.value in ['sht41', 'ds18b20']:
                 # In a real implementation, we would query the database
                 # For simulation, we'll return a random temperature value
                 import random
@@ -158,7 +161,7 @@ class TempPumpTimerController(BaseController):
         # For example:
         if self.output_pin is not None:
             import RPi.GPIO as GPIO
-            GPIO.output(self.output_pin, GPIO.HIGH if action_type == 'pump_on' else GPIO.LOW)
+            GPIO.output(self.config_obj.output_pin, GPIO.HIGH if action_type == 'pump_on' else GPIO.LOW)
         else:
             print(f"Missing output_pin configuration for {self.name}")
         
