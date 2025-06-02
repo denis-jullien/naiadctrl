@@ -11,6 +11,7 @@ from database import engine
 from api.sensor_router import router as sensor_router
 from api.controller_router import router as controller_router
 from api.system_router import router as system_router
+from api.output_router import router as output_router
 from scheduler_instance import scheduler
 
 from sensors.base import initialize_sensors
@@ -49,6 +50,7 @@ app.add_middleware(
 app.include_router(sensor_router, prefix="/api", tags=["sensors"])
 app.include_router(controller_router, prefix="/api", tags=["controllers"])
 app.include_router(system_router, prefix="/api", tags=["system"])
+app.include_router(output_router, prefix="/api", tags=["outputs"])
 
 # Initialize controllers and sensors
 from controllers.base import initialize_controllers

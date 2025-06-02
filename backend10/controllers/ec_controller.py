@@ -34,12 +34,33 @@ class EcController(BaseController):
             if (self.last_dose_time is None or 
                 datetime.now() - self.last_dose_time > timedelta(seconds=self.config_obj.min_dose_interval)):
                 
-                # In a real implementation, we would activate the output pin
-                # For example:
-                # import RPi.GPIO as GPIO
-                # GPIO.output(self.output_pin, GPIO.HIGH)
-                # time.sleep(self.dose_time)
-                # GPIO.output(self.output_pin, GPIO.LOW)
+                # Activate the output pin if configured
+                if self.config_obj.output_pin is not None:
+                    try:
+                        import platform
+                        if platform.system() == "Linux":
+                            try:
+                                import RPi.GPIO as GPIO
+                                # Set up the pin as output
+                                GPIO.setup(self.config_obj.output_pin, GPIO.OUT)
+                                # Turn on the nutrient pump
+                                GPIO.output(self.config_obj.output_pin, True)
+                                # Import threading for non-blocking delay
+                                import threading
+                                import time
+
+                                def turn_off_after_delay():
+                                    time.sleep(self.config_obj.dose_time)
+                                    GPIO.output(self.config_obj.output_pin, False)
+
+                                # Start a thread to turn off the pin after the dose time
+                                threading.Thread(target=turn_off_after_delay).start()
+                            except ImportError:
+                                print(f"GPIO library not available, simulating dosing")
+                        else:
+                            print(f"Not on Linux, simulating dosing with pin {self.config_obj.output_pin}")
+                    except Exception as e:
+                        print(f"Error controlling output pin: {e}")
                 
                 self.last_dose_time = datetime.now()
                 
