@@ -14,7 +14,9 @@ from api.system_router import router as system_router
 from api.output_router import router as output_router
 from scheduler_instance import scheduler
 
+from controllers.base import initialize_controllers
 from sensors.base import initialize_sensors
+from controllers.outputs import initialize_outputs
 
 # Create tables on startup
 def create_db_and_tables():
@@ -53,10 +55,9 @@ app.include_router(system_router, prefix="/api", tags=["system"])
 app.include_router(output_router, prefix="/api", tags=["outputs"])
 
 # Initialize controllers and sensors
-from controllers.base import initialize_controllers
 initialize_controllers()
 initialize_sensors()
-
+initialize_outputs()
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
