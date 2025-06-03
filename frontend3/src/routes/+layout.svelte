@@ -29,6 +29,12 @@
           >
             Controllers
           </a>
+          <a
+            href="/outputs"
+            class="flex items-center px-3 py-2 rounded-md text-sm font-medium {$page.url.pathname.startsWith('/outputs') ? 'bg-primary text-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}"
+          >
+            Outputs
+          </a>
           <a 
             href="/system" 
             class="flex items-center px-3 py-2 rounded-md text-sm font-medium {$page.url.pathname.startsWith('/system') ? 'bg-primary text-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}"
