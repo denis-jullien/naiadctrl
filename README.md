@@ -18,7 +18,7 @@ curl -sSL https://raw.githubusercontent.com/denis-jullien/naiadctrl/main/install
 ```
 Or download and run:
 ```bash
-wget https://raw.githubusercontent.com/username/repo/main/install.sh
+wget https://raw.githubusercontent.com/denis-jullien/naiadctrl/main/install.sh
 chmod +x install.sh
 ./install.sh
 ```

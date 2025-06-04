@@ -40,9 +40,13 @@ trap 'error_exit "Installation failed at line $LINENO"' ERR
 print_header() {
     local text="$1"
     local width=60
+    local text_length=${#text}
+    local padding=$(((width - text_length - 2) / 2))
+    local right_padding=$((width - text_length - padding - 2))
+
     echo
     echo -e "${PURPLE}╔$(printf '═%.0s' $(seq 1 $((width-2))))╗${NC}"
-    printf "${PURPLE}║${WHITE}%*s${PURPLE}║${NC}\n" $(((${#text}+$width-2)/2)) "$text"
+    printf "${PURPLE}║${WHITE}%*s%s%*s${PURPLE}║${NC}\n" $padding "" "$text" $right_padding ""
     echo -e "${PURPLE}╚$(printf '═%.0s' $(seq 1 $((width-2))))╝${NC}"
     echo
 }
@@ -231,7 +235,7 @@ main_install() {
     rm -rf $APP_NAME-temp
     {
         git clone --depth 1 https://github.com/$GITHUB_REPO.git $APP_NAME-temp -q
-        sudo cp -r $APP_NAME-temp/* $INSTALL_DIR/
+        sudo cp -r $APP_NAME-temp/backend/* $INSTALL_DIR/
         sudo chown -R $SERVICE_USER:$SERVICE_USER $INSTALL_DIR
         rm -rf $APP_NAME-temp
     } &
@@ -269,7 +273,7 @@ User=$SERVICE_USER
 Group=$SERVICE_USER
 WorkingDirectory=$INSTALL_DIR
 Environment=PATH=$INSTALL_DIR/venv/bin
-ExecStart=$INSTALL_DIR/venv/bin/python app.py
+ExecStart=$INSTALL_DIR/venv/bin/python main.py
 Restart=always
 RestartSec=10
 StandardOutput=journal
