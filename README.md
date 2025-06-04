@@ -10,6 +10,20 @@ A complete hydroponic monitoring and control system built with Python and Svelte
 - Sensor calibration interface
 - Configuration management
 
+## 🚀 **Quick start:**
+
+**One-line install:**
+```bash
+curl -sSL https://raw.githubusercontent.com/denis-jullien/naiadctrl/main/install.sh | bash
+```
+Or download and run:
+```bash
+wget https://raw.githubusercontent.com/username/repo/main/install.sh
+chmod +x install.sh
+./install.sh
+```
+
+
 ## System Architecture
 
 ### Backend
@@ -22,19 +36,17 @@ A complete hydroponic monitoring and control system built with Python and Svelte
 ### Frontend
 
 - SvelteKit-based web application
-- Real-time data visualization with Chart.js
-- Responsive design using Bootstrap
 
 ## Hardware Requirements
 
-- Raspberry Pi (3 or 4 recommended)
-- pH sensor with HX711 ADC
-- ORP sensor with HX711 ADC
-- EC sensor with HX711 ADC
-- DS18B20 temperature sensor
-- SHT41 temperature and humidity sensor
-- MOSFET modules for controlling pumps
-- Peristaltic pumps for dosing
+- Raspberry Pi 
+- NaiadCtrl Hat
+  - pH probe
+  - ORP probe
+  - EC probe
+  - DS18B20 temperature sensor
+  - SHT41 temperature and humidity sensor
+  - MOSFETs (open drain) for controlling pumps or other equipements
 
 ## Installation
 
