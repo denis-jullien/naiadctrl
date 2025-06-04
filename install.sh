@@ -42,7 +42,7 @@ print_header() {
     local width=60
     local text_length=${#text}
     local padding=$(((width - text_length - 2) / 2))
-    local right_padding=$((width - text_length - padding - 2))
+    local right_padding=$((width - text_length - padding - 3))
 
     echo
     echo -e "${PURPLE}╔$(printf '═%.0s' $(seq 1 $((width-2))))╗${NC}"
@@ -215,7 +215,7 @@ main_install() {
 
     # Create service user
     print_step "Setting Up Service User"
-    if sudo useradd --system --home $INSTALL_DIR --shell /bin/false $SERVICE_USER 2>/dev/null; then
+    if sudo useradd --system --home $INSTALL_DIR --shell /bin/false -G gpio $SERVICE_USER 2>/dev/null; then
         print_success "Service user '$SERVICE_USER' created"
     else
         print_info "Service user '$SERVICE_USER' already exists"
